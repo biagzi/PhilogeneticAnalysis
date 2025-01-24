@@ -1,0 +1,68 @@
+---
+title: "Chap1"
+output: html_document
+---
+
+```{r, warning=FALSE}
+library(ape)
+library(phytools)
+```
+
+Reading a simple Newick text string:
+"is a simple way to encode a phylogenetic tree using a series of nested parentheses.More closely nested species are more closely related. For instance, the simple Newick tree ((chimp,human),gorilla); tells us that the operational taxa chimp
+and human aremore closely related to each other than either is to gorilla. There are other ways that phylogenetic
+trees can be represented in machine-readable text, but the Newick string is by far the most common."
+
+```{r}
+text.string<-
+"(((((Robin,Iguana),((((Cow,Whale),Pig),Bat),
+(Lemur,Human))),Coelacanth),Goldfish),Shark);"
+vert.tree<-read.tree(text=text.string)
+```
+
+```{r}
+#ploting the tree
+
+plot(vert.tree,no.margin=TRUE)
+
+#if you wanna see the arguments
+#args(plot.phylo)
+```
+```{r}
+#Plotting the tree with different styles
+
+par(mfrow=c(2,2),mar=c(1.1,1.1,3.1,1.1)) #divide our plotting device into four subplots for a 2 × 2 grid—
+#The order of this vector is bottom, left, top, and right—
+
+#plot in (a) using a retangular cladrogram style
+plot(vert.tree)
+mtext("(a)",line=1,adj=0)
+
+#plot in (b) with a slanted cladogram style
+plot(vert.tree,type="cladogram")
+mtext("(b)",line=1,adj=0)
+
+#plot in (c) with a unrooted tree syle
+plot(unroot(vert.tree),type="unrooted",
+lab4ut="axial",x.lim=c(-2,6.5),
+y.lim=c(-3,7.5))
+mtext("(c)",line=1,adj=0)
+```
+
+The "vert.tree" object is a list containing (at least) the following elements:
+1. edge: a 20 × 2 (in this case) matrix containing starting and ending indices for the nodes
+subtending each branch of the phylogeny. By convention, tip nodes (that is, those
+corresponding to species or operational taxa) are numbered 1 through N for N species,
+while internal nodes are numbered N +1 (at the root) through N+ the number of internal
+nodes
+2. Nnode: an integer value giving the total number of internal nodes in the tree.
+3. tip.label: a character vector of length N containing the labels for all the tips or
+terminal taxa in the phylogeny.
+
+We can visualize this structure like this:
+
+```{r}
+plotTree(vert.tree,offset=1,type="cladogram")
+labelnodes(1:(Ntip(vert.tree)+vert.tree$Nnode), 1:(Ntip(vert.tree)+vert.tree$Nnode),interactive=FALSE,cex=0.8)
+```
+
