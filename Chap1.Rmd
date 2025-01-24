@@ -3,6 +3,10 @@ title: "Chap1"
 output: html_document
 ---
 
+Code following the book "Phylogenetic Comparative Methods in R - Liam J. Revell and Luke J. Harmon, 2022"
+Chapter1
+
+
 ```{r, warning=FALSE}
 library(ape)
 library(phytools)
