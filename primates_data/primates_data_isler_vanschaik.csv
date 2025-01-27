@@ -1,0 +1,99 @@
+﻿Group,Species number,Genus_species,Allonursing,"Communal nesting, babysitting, retrieval",Protection,provisioning_Male,provisioning_others,carryng_Male ,carrying_others,PC1,PC2,Provisioning mothers,Gregariousness,Diet,Activity,Substrate,Body mass [g],Brain size [g or cc],Fertility [offspring per year],Gestation length [d],Weaning age [d],Age at first reproduction [y],Maximum lifespan [y],Remarks
+Primates,290,Colobus_guereza,0,1,0.5,0,0,0,0.55,1.738,-1.871,,2,4,2,4,7506,69.8,0.58,158,334,4.75,35.2,29.7 infant transfers
+Primates,291,Colobus_polykomos,0,1,0.5,0,0,0,0.52,1.653,-1.750,,2,4,2,4,8300,70.2,0.55,170,365,5.5,33.9,"22.2 infant transfers, males and females share infant care (Hill 1964), baby being handled oacaasionally by the male"
+Primates,251,Callithrix_pygmaea,0,1,1,1,1,0.5,0.4,4.652,-1.848,,2,3,2,4,110,4,4.2,142,91,1.9,18.6,
+Primates,249,Callithrix_jacchus,0,1,1,1,1,0.5,0.4,4.652,-1.848,,2,3,2,4,320,7.2,4.04,144,77,1.67,22.8,
+Primates,250,Callithrix_penicillata,0,1,1,1,1,0.5,0.4,4.652,-1.848,,2,3,2,4,328,7.3,,,,,15.4,
+Primates,248,Callithrix_argentata,0,1,1,1,1,0.5,0.4,4.652,-1.848,,2,3,2,4,345,8,3.43,144,120,1.67,16.5,
+Primates,253,Saguinus_fuscicollis,0,1,1,0.75,0.75,0.5,0.4,4.133,-2.033,,2,3,2,4,401,7.9,2.5,147,91,1.92,24.9,
+Primates,257,Saguinus_oedipus,0,1,1,0.75,0.75,0.5,0.4,4.133,-2.033,,2,3,2,4,431,9.8,3.28,160,76,1.89,26.2,
+Primates,256,Saguinus_nigricollis,0,1,1,0.75,0.75,0.5,0.4,4.133,-2.033,,2,3,2,4,476,8.9,2.57,140,81.3,2.33,20.2,
+Primates,254,Saguinus_geoffroyi,0,1,1,0.75,0.75,0.5,0.4,4.133,-2.033,,2,3,2,4,517,10.1,3.03,142,75,2,20.5,
+Primates,255,Saguinus_mystax,0,1,1,0.75,0.75,0.5,0.4,4.133,-2.033,,2,3,2,4,584,11.1,2.08,145,,1.33,20,
+Primates,252,Leontopithecus_rosalia,0,1,1,1,1,0.5,0.4,4.652,-1.848,,2,3,2,4,609,12.8,2.35,125,91,3.6,31.6,
+Primates,296,Semnopithecus_hypoleucos,0.1,0,0.5,0,0,0,0.332,0.646,-0.451,,2,4,2,3,10130,88.3,0.37,212,759.4,6.7,,carrying by mostly subadult females
+Primates,261,Saimiri_sciureus,0,0,0.5,0,0,0,0.3,0.573,-1.454,,2,3,2,4,742,24,0.85,171,183,3.86,30.3,"carrying by mostly subadult females (no neonates, one month at least), 43.4 infant transfers"
+Primates,247,Callimico_goeldii,0,1,1,1,1,0.4,0.25,4.028,-0.948,,2,3,2,4,484,11.4,1.17,148.5,67,1.49,22.2,
+Primates,271,Cercopithecus_lowei,0,0.5,0.5,0,0,0,0.25,0.661,-0.958,,2,3,2,4,2097,51.2,,,,,30,"aunts carry (Bourliere et al. 1970), but amount not specified"
+Primates,292,Nasalis_larvatus,0,0,0.5,0,0,0,0.25,0.432,-1.253,,2,4,2,4,9730,83.8,0.68,166,281,4.5,25.1,"0.3 infant transfers, infants close to mother for 1 year (Rajanathan and Bennett 1990)"
+Primates,285,Papio_anubis,0,0.5,0.5,0,0,0.1,0.25,0.861,-1.254,,2,3,2,3,13300,152.4,0.47,180,420,6.92,31.6,"carrying by mostly subadult females (no neonates, one month at least), 0.8 infant transfers"
+Primates,317,Propithecus_edwardsi,0.05,0.5,0.5,0,0,0,0.25,0.652,-0.392,,2,2,2,4,5682,39.5,0.67,179,365,,,3-9 group members
+Primates,258,Cebus_apella,0.25,0,0.5,0.5,0.5,0.1,0.25,1.624,1.651,,2,3,2,4,2489,64.3,0.62,152,265,6.67,46,0 infant transfers
+Primates,275,Chlorocebus_aethiops,0.1,0.5,0.5,0,0,0,0.196,0.491,0.392,,2,3,2,3,3039,59,0.7,163,259,5.06,30.8,"adult and subadult females carry offspring of high ranking mothers (relatives preferred), very young infants preferred (Whitten 1984), 2.7 infant transfers"
+Primates,240,Alouatta_palliata,0.1,0,0.5,0,0,0.05,0.11,0.119,0.295,,2,2,2,4,5350,48,0.6,186,365,4,24,
+Primates,260,Cebus_olivaceus,0.18,0,0.5,0.5,0.5,0.1,0.11,1.241,1.423,,2,3,2,4,2633,68.4,0.46,160,547,6,47,"carrying by other adult females and older related juveniles (no neonates, one month at least)"
+Primates,262,Callicebus_cupreus,0,1,1,0.5,0.05,0.853,0.103,2.989,-2.329,,1.5,3,2,4,815,17.1,1,128.6,140,5,26.4,offspring leaves family with 2-3y
+Primates,276,Erythrocebus_patas,0.1,0.5,0.5,0,0,0,0.103,0.228,0.766,,2,2,2,3,6500,88.9,0.94,167,228,3.04,28.3,0.5 infant transfers
+Primates,325,Galago_senegalensis,0,0.5,0.5,0,0,0,0.1,0.238,-0.354,,2,3,1,4,194,4,3.1,141,84,1.64,17.1,"sleep in group, closely related females with offspring"
+Primates,237,Aotus_lemurinus,0,1,1,0.75,0.1,0.85,0.1,3.274,-2.240,,1.5,3,1,4,716,16.3,,133,75,,33.8,
+Primates,236,Aotus_trivirgatus,0,1,1,0.75,0.1,0.85,0.1,3.274,-2.240,,1.5,3,1,4,933,16.1,1.33,133,76,4,30.1,33.5 infant transfers; immatures stay with group till 3-4y (sexmat)
+Primates,321,Eulemur_rubriventer,0,1,1,0,0,0.25,0.1,1.231,-0.640,,1.5,2,1,4,1960,26.2,,123,135,1.55,20,"male carries (Nekaris 2003); 2-6, family with offspring, very rarely with several adults in group"
+Primates,318,Propithecus_verreauxi,0,0.5,0.5,0,0,0.1,0.1,0.437,-0.650,,2,2,2,4,2955,26.2,0.59,159,183,6,30.5,males only contact and groom (Jolly 1966)
+Primates,323,Lemur_catta,0.1,1,1,0,0,0,0.1,0.714,1.232,,2,2,2,4,2210,22.9,1.01,136,179,3,37.3,allocare by other adult females
+Primates,324,Varecia_variegata,0.1,1,1,0,0,0,0.1,0.714,1.232,,1.5,2,2,4,3575,32.1,2.16,102,146,2.72,36,"infant stashing, males guard and huddle with infants, allonursing; pairs with offspring, 2-5, sometimes larger groups"
+Primates,238,Alouatta_caraya,0.1,0,0.5,0,0,0.1,0.1,0.190,0.188,,2,2,2,4,4240,47.8,1.1,187,325,3.71,32.4,
+Primates,259,Cebus_capucinus,0.25,0,0.5,0.5,0.5,0.1,0.1,1.200,2.255,,2,3,2,4,2436,72.1,0.44,161,517,6,54,allonursing mainly by low ranking females
+Primates,241,Alouatta_seniculus,0,0,0.5,0,0,0,0.084,-0.037,-0.584,,2,2,2,4,5210,54.3,0.72,191,380,5.17,25,"carrying by other adult females (no neonates, one month at least)"
+Primates,312,Tarsius_spectrum,0,0.5,0.5,0,0.05,0,0.05,0.151,-0.123,,2,5,1,4,126,3.4,2.38,191,78,1.42,16,"allocare after 3 weeks; all adult females in a group give birth (Gursky 2007); 2-8 group members, sleep together, social interactions"
+Primates,239,Alouatta_guariba,0,0,0.5,0,0,0,0.05,-0.133,-0.447,,2,2,2,4,4550,49.1,0.57,,,,,
+Primates,295,Pygathrix_nemaeus,0,0,0.5,0,0,0,0.05,-0.133,-0.447,,2,4,2,4,8440,81.1,0.74,210,330,4,26,infant sharing with adult females: only neonates in captivity
+Primates,278,Macaca_fascicularis,0,0,0.5,0,0,0,0.041,-0.158,-0.411,,2,3,2,4,3518,62.1,0.53,163,231,5.23,38.5,4.1 infant transfers
+Primates,306,Pan_troglodytes,0,0.5,0.5,0.05,0.05,0,0.038,0.166,-0.067,,2,3,2,3,40367,350.5,0.17,235,1460,13.25,59.4,carrying by mostly subadult females
+Primates,280,Macaca_mulatta,0.1,0.5,0.5,0,0,0.01,0.022,0.019,1.063,,2,3,2,3,5670,84.3,0.67,167,192,5,34,"carrying (no neonates, one month at least), relatives preferred, 0 infant transfers"
+Primates,287,Papio_hamadryas,0,0.5,0.5,0,0.013,0.1,0.013,0.206,-0.292,,2,3,2,3,10300,133,0.5,170,365,6.1,37.5,
+Primates,288,Papio_ursinus,0,0.5,0.5,0,0.013,0.1,0.013,0.206,-0.292,,2,3,2,3,14800,165,0.41,187,502,3.67,32.6,carrying infants of high ranking mothers
+Primates,286,Papio_cynocephalus,0.05,0.5,0.5,0,0,0.1,0.013,0.183,0.267,,2,3,2,3,12000,156.1,0.56,175,456,5.99,34.1,
+Primates,283,Macaca_sylvanus,0,1,0.5,0,0,0.13,0.01,0.472,-0.081,,2,2,2,3,9625,97.9,0.55,165,213,4.75,29.1,0 infant transfers
+Primates,311,Tarsius_bancanus,0,0,0,0,0,0,0,-0.539,-0.405,,0,5,1,4,126,3.2,1.54,178,76,1.57,16.3,"mothers guard offspring against males; solitary, sleep alone"
+Primates,313,Cheirogaleus_medius,0,0.5,1,0,0,0,0,0.220,0.208,,1.5,3,1,4,139,2.6,2.5,62,45,2,23.2,"if the father is absent, the infant will die (Fietz and Dausmann 2003); offspring from previous one or two breeding seasons"
+Primates,326,Galagoides_zanzibaricus,0,0.5,0,0,0,0,0,-0.310,-0.110,,2,3,1,4,143,3.5,2.4,124,59.3,0.73,12.2,"galagines sleep together; sleep in group, closely related females with offspring"
+Primates,327,Loris_tardigradus,0,0.5,1,0,0.05,0,0,0.275,0.237,,1.5,3,1,4,193,5.9,2.6,171,135,1.39,19.3,"passive food sharing, huddle, but carried only by mother; sometimes sleep in groups, sometimes interact"
+Primates,328,Loris_lydekkerianus,0,0.5,1,0,0,0.1,0,0.420,-0.088,,1.5,3,1,4,267,6.3,,167.5,135,1.37,18.7,"males groom and play, captive males also carry sometimes"
+Primates,331,Nycticebus_pygmaeus,0,0,1,0,0,0,0,-0.009,-0.087,,0.5,3,1,4,307,7.2,0.68,185,133,,17.1,"only mother carries, male close by"
+Primates,329,Nycticebus_coucang,0,0,0.5,0,0,0.05,0,-0.174,-0.394,,0.5,3,1,4,652,10.1,1,193,180,1.54,25.8,"male sat close to infant when mother was caught in trap (Wiens 2002), else, male not often near infant; social interactions rare, sometimes sleep together"
+Primates,322,Hapalemur_griseus,0,1,1,0,0,0.25,0,0.949,-0.237,,2,4,1,4,709,14.1,1.4,138,121,2.73,23.3,"male carries (Nekaris 2003), 1-2 females and one male in a group, and older offspring (Nievergelt et al. 2002); group 2-7, may have several adult females"
+Primates,332,Perodicticus_potto,0,0.5,0.5,0.05,0,0,0,0.004,0.057,,0.5,3,1,4,835,12.4,1.13,197,212,0.91,26.3,males only groom and play; territorial
+Primates,263,Callicebus_torquatus,0,1,1,0.5,0.05,0.85,0,2.692,-1.906,,1.5,3,2,4,980,19.1,,,138,4.61,,
+Primates,330,Nycticebus_bengalensis,0,0,1,0,0,0,0,-0.009,-0.087,,0.5,3,1,4,1060,13.5,,,,,25.5,"only mother carries, male close by"
+Primates,315,Avahi_laniger,0,0,1,0,0,0,0,-0.009,-0.087,,1.5,4,1,4,1106,9.9,1,135,153,2.58,,"family, 2-5 group members"
+Primates,235,Aotus_azarai,0,1,1,0.75,0.1,0.85,0,2.991,-1.838,,1.5,3,1,4,1230,20.7,0.99,126.5,229.7,5,21.2,
+Primates,267,Pithecia_pithecia,0,0,1,0.5,0,0,0,0.480,-0.009,,1.5,2,2,4,1580,32.6,0.52,159,120,2.08,36,
+Primates,266,Pithecia_monachus,0,0,1,0.5,0,0,0,0.480,-0.009,,1.5,2,2,4,2110,36.9,,,,,24.6,pair with offspring
+Primates,319,Eulemur_fulvus,0,0,1,0,0,0,0,-0.009,-0.087,,2,2,1,4,2292,25.8,0.71,121.3,183,2.66,35.5,group 8-9
+Primates,320,Eulemur_macaco,0,0,1,0,0,0,0,-0.009,-0.087,,2,2,1,4,2390,24.5,1.39,125.5,135,2.18,36.2,group 7-10
+Primates,270,Cercopithecus_campbelli,0,0,0.5,0,0,0,0,-0.274,-0.246,,2,3,2,4,2700,54.4,1,180,365,3.5,29.3,
+Primates,265,Cacajao_melanocephalus,0,0,0.5,0,0,0,0,-0.274,-0.246,,2,2,2,4,2710,64.9,,,,,,
+Primates,264,Cacajao_calvus,0,0,1,0,0,0,0,-0.009,-0.087,,2,2,2,4,2880,74.3,0.48,180,638,3.58,35.8,
+Primates,269,Cercopithecus_ascanius,0,0,0.5,0,0,0,0,-0.274,-0.246,,2,3,2,4,2901,54.9,0.23,172,183,5,31.2,
+Primates,272,Cercopithecus_diana,0,0,0.5,0,0,0,0,-0.274,-0.246,,2,3,2,4,3900,55.2,1,,365,5.37,35.1,
+Primates,274,Cercopithecus_neglectus,0,0,0.5,0,0,0,0,-0.274,-0.246,,2,3,2,4,4130,60.9,0.44,168,365,5,30.8,"0 infant transfers; harem, monogamy not confirmed"
+Primates,273,Cercopithecus_mitis,0,0,0.5,0,0,0,0,-0.274,-0.246,,2,3,2,4,4628,65.2,0.26,176,316,5.42,30,
+Primates,302,Trachypithecus_vetulus,0,0,0.5,0,0,0,0,-0.274,-0.246,,2,4,2,4,5103,60.4,0.38,200,228,4,26.1,"males tend to ignore infants (Roonwal and Mohnot 1977), females are rather aggressive against each other"
+Primates,309,Hylobates_lar,0,0,1,0.1,0.1,0,0,0.198,-0.013,,1.5,2,2,4,5595,101.9,0.29,210,745,10,52,
+Primates,298,Trachypithecus_cristatus,0,0.5,0.5,0,0,0,0,-0.045,0.049,,2,4,2,4,6060,55,0.68,198.3,365,4,28.3,"24.9 infant transfers, in 19 of 49 cases of infant transfer infant protested (Bernstein 1968) "
+Primates,268,Cercocebus_atys,0,0,0.5,0,0,0,0,-0.274,-0.246,,2,2,2,3,6200,86.8,0.92,167,126,4.71,32.5,
+Primates,316,Indri_indri,0,0,1,0,0,0,0,-0.009,-0.087,,1.5,4,2,4,6335,34.8,0.4,135,365,7,,"offspring stays more than a year, 2-5 group members"
+Primates,281,Macaca_nemestrina,0,0,0.5,0,0,0,0,-0.274,-0.246,,2,3,2,3,6539,100.7,0.9,171,237,3.92,37.6,
+Primates,293,Presbytis_melalophos,0,0,0.5,0,0,0,0,-0.274,-0.246,,2,4,2,4,6567,59.2,,,,,20,"no babysitting, defence by adult male"
+Primates,294,Presbytis_comata,0,1,0.5,0,0,0,0,0.184,0.344,,2,4,2,4,6695,80.3,,,,4,,"38 times babysitting of other adult and juvenile females, of infants<5 months (Ruhiyat 1983)"
+Primates,301,Trachypithecus_obscurus,0,0.5,0.5,0,0,0,0,-0.045,0.049,,2,4,2,4,6765,60,0.5,152,365,4,33.9,"babysitting by adult females, defence by adult male"
+Primates,297,Nasalis_concolor,0,0,1,0,0,0,0,-0.009,-0.087,,1.5,4,2,4,6800,56.2,,,,,,"infant sharing not observed (Hill 1972); group size 3-8, 1 male, may have several females"
+Primates,246,Lagothrix_lagotricha,0,0,0.5,0,0,0,0,-0.274,-0.246,,2,2,2,4,7020,98,0.33,222,548,9,32,0 infant transfers
+Primates,244,Ateles_geoffroyi,0,0,0.5,0,0,0,0,-0.274,-0.246,,2,2,2,4,7290,109.6,0.49,228,790,7,47.1,
+Primates,279,Macaca_fuscata,0,0.5,0.5,0,0,0,0,-0.045,0.049,,2,3,2,3,8030,96.8,0.45,175,195,6.1,38.5,"carrying by mostly subadult females (no neonates, one month at least), non-relatives preferred, 0 infant transfers"
+Primates,245,Ateles_paniscus,0,0,0.5,0,0,0,0,-0.274,-0.246,,2,2,2,4,8070,101.2,0.25,228,1094,5,46,
+Primates,277,Macaca_arctoides,0,0.5,0.5,0,0,0,0,-0.045,0.049,,2,3,2,3,8400,99.8,0.68,178,309,4.9,29.2,
+Primates,242,Ateles_belzebuth,0,0,0.5,0,0,0,0,-0.274,-0.246,,2,2,2,4,8484,112.7,0.35,217.5,,,35.2,
+Primates,243,Ateles_fusciceps,0,0,0.5,0,0,0,0,-0.274,-0.246,,2,2,2,4,9160,108.7,0.44,228,577,5.12,46,
+Primates,299,Trachypithecus_geei,0,0.1,0.5,0,0,0,0,-0.228,-0.187,,2,4,2,4,9500,81.3,,,,,,one observation of transfer to another adult female
+Primates,310,Hylobates_syndactylus,0,0.5,1,0.5,0.5,0.5,0,2.256,-0.902,,1.5,2,2,4,11295,123.5,0.24,232,639,9,43,
+Primates,289,Theropithecus_gelada,0,0.5,0.5,0,0,0.1,0,0.155,-0.247,,2,4,2,3,11700,124.5,0.47,170,450,4,35.5,
+Primates,305,Pan_paniscus,0,0.5,0.5,0.05,0,0,0,0.004,0.057,,2,3,2,3,33200,326.3,0.23,231,1094,14.2,54.5,adoption and allosuckling if mother died
+Primates,308,Pongo_pygmaeus,0,0,0,0,0,0,0,-0.539,-0.405,,0.5,2,2,4,36948,337.7,0.14,250,1936,15.7,56.2,
+Primates,307,Pongo_abelii,0,0,0,0,0,0,0,-0.539,-0.405,,0.5,2,2,4,41148,341.2,0.11,243,2009,15.4,59,
+Primates,303,Gorilla_gorilla,0,0.5,0.5,0,0,0.05,0,0.055,-0.099,,2,4,2,3,71500,455.9,0.2,257,1278,10.2,55,
+Primates,304,Gorilla_beringei,0,0.5,0.5,0,0,0.05,0,0.055,-0.099,,2,4,2,3,97500,480.2,,,,10,,
+Primates,314,Microcebus_murinus,0.1,0.5,0.5,0,0,0,0,-0.063,1.181,,2,3,1,4,65.1,1.6,1.9,60.2,40.1,1.75,18.2,"allonursing, but only mother carries (Eberle and Kappeler 2006); 2-9 females sleep together"
+Primates,284,Miopithecus_talapoin,0.1,0,0.5,0,0,0,0,-0.292,0.886,,2,3,2,4,1560,34.8,1,167,183,4.46,27,
+Primates,282,Macaca_radiata,0.1,0.5,0.5,0,0,0.05,0,0.037,1.033,,2,3,2,3,3856,69.4,0.78,168,365,4,30,"carrying by mostly subadult females, mostly infants of low ranking mothers, 0 infant transfers"
+Primates,300,Trachypithecus_johnii,0.1,0.5,0.5,0,0,0,0,-0.063,1.181,,2,4,2,4,11600,84.6,0.57,,319,,34,"transfer to adult females up to 49 days, occasional allosuckling, babysitting (19 times); adult males do not interact with females or offspring"

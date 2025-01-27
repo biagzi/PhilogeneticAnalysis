@@ -3,14 +3,19 @@ title: "Chap1"
 output: html_document
 ---
 
-Code following the book "Phylogenetic Comparative Methods in R - Liam J. Revell and Luke J. Harmon, 2022"
-Chapter1
+# Code following the book "Phylogenetic Comparative Methods in R - Liam J. Revell and Luke J. Harmon, 2022"
+## Chapter1
 
 
 ```{r, warning=FALSE}
 library(ape)
 library(phytools)
+library(readr)
+library(geiger)
 ```
+
+
+#### Operations with simple newick text string
 
 Reading a simple Newick text string:
 "is a simple way to encode a phylogenetic tree using a series of nested parentheses.More closely nested species are more closely related. For instance, the simple Newick tree ((chimp,human),gorilla); tells us that the operational taxa chimp
@@ -69,4 +74,197 @@ We can visualize this structure like this:
 plotTree(vert.tree,offset=1,type="cladogram")
 labelnodes(1:(Ntip(vert.tree)+vert.tree$Nnode), 1:(Ntip(vert.tree)+vert.tree$Nnode),interactive=FALSE,cex=0.8)
 ```
+The node numbers are simply the indices from the "phylo" object element edge, which is itself a matrix containing the starting and ending indices for each branch of the phylogeny!
 
+```{r}
+#Save the tree in a file:
+write.tree(vert.tree,file="example.tre")
+```
+
+```{r}
+#Add arrow in some species and plot in a circular style
+plotTree(vert.tree,type="fan",fsize=0.6,lwd=1,ftype="i")
+
+pr.species<-c("Cow","Whale","Coelacanth","Human","Bat")
+nodes<-sapply(pr.species,grep,x=vert.tree$tip.label)
+nodes #grep matches a character pattern to a vector and returns the positions of the elements of the vector in which that pattern is found.
+add.arrow(vert.tree,tip=nodes,arrl=0.15,col="red",offset=2)
+```
+
+```{r}
+#Now we can prune these species out of the three:
+vert.noPR<-drop.tip(vert.tree,pr.species)
+plotTree(vert.noPR,type="fan",fsize=0.6,lwd=1,
+ftype="i")
+```
+
+Now, if we want to extract the clade in which the mammmals are, we should exclude the "Coelacanth""
+
+```{r}
+node<-getMRCA(vert.tree,pr.species[
+-which(pr.species%in%c("Coelacanth"))])
+node
+```
+
+And then found the most recent common ancestor (MRCA) of the members of the clade we want to prune (mammalian):
+
+Let's color it so we can visualize:
+
+```{r}
+
+plot(paintSubTree(vert.tree,node,"b","a"),
+type="fan",fsize=0.6,lwd=2,
+colors=setNames(c("gray","blue"),c("a","b")),
+ftype="i")
+arc.cladelabels(vert.tree,"clade to extract",node,
+1.35,1.4,mark.node=FALSE,cex=0.6)
+
+```
+
+```{r}
+pr.clade<-extract.clade(vert.tree,node)
+pr.clade
+pr.tree<-keep.tip(vert.tree,pr.species)
+pr.tree
+```
+```{r}
+par(mfrow=c(1,2))
+plotTree(pr.clade,ftype="i",mar=c(1.1,1.1,3.1,1.1),
+cex=1.1)
+mtext("(a)",line=0,adj=0)
+```
+
+```{r}
+#you can also do it interactivelly!!!s
+anolis.pruned<-collapseTree(vert.tree)
+```
+```{r}
+#We can also store multiple trees in an object:
+vert.trees<-c(vert.tree,vert.noPR,pr.clade,
+pr.tree)
+print(vert.trees,details=TRUE)
+
+```
+
+### 1.9 Managing trees and Comparative Data - Primates
+
+"Throughout this book, we’ll often be called upon to manage not only phylogenies but also comparative phenotypic trait data for species. To see an example of how to do this with real data, let’s use two different data files from the book webpage: anole.data.csv and ecomorph.csv (Mahler et al. 2010). We’ll combine the data of these files with the phylogeny from our Anolis tree file (Anolis.tre) that we read into R earlier in the chapter."
+I will do it with my data
+
+#### Preraring the data
+
+```{r}
+primate_tree <- read.nexus("primates_data/consensusTree_10kTrees_Primates_Version3.nex")
+plotTree(primate_tree,type="fan",fsize=0.2,lwd=1,ftype="i")
+```
+
+
+
+```{r}
+primate_data <- read_csv("primates_data/primates_data_isler_vanschaik.csv")
+primate_data <- as.data.frame(primate_data)
+head(primate_data)
+```
+
+
+```{r}
+#Change way the species name is written
+#primate_data$species <- gsub("_", " ", primate_data$Genus_species)
+primate_data$species <- gsub("_", "_", primate_data$Genus_species)
+head(primate_data)
+```
+
+```{r}
+#rebname the columns and select only the columns I want to work with
+colnames(primate_data)[colnames(primate_data) == "Maximum lifespan [y]"] <- "maxlongevity_y"
+colnames(primate_data)[colnames(primate_data) == "Gregariousness"] <- "gregariousness"
+colnames(primate_data)[colnames(primate_data) == "Allonursing"] <- "allonursing"
+colnames(primate_data)[colnames(primate_data) == "Communal nesting, babysitting, retrieval"] <- "communal_nesting_babysitting"
+colnames(primate_data)[colnames(primate_data) == "Protection"] <- "protection"
+colnames(primate_data)[colnames(primate_data) == "Body mass [g]"] <- "body_mass"
+colnames(primate_data)[colnames(primate_data) == "Age at first reproduction [y]"] <- "reproduction_age_y"
+
+primate_df <- subset(primate_data, select = c(species,body_mass,maxlongevity_y,reproduction_age_y,gregariousness,allonursing,communal_nesting_babysitting,protection,provisioning_Male,provisioning_others,carryng_Male,carrying_others))
+primate_df$species <- tolower(primate_df$species)
+primate_tree$tip.label <- tolower(primate_tree$tip.label)
+# Set species names as row names
+rownames(primate_df) <- primate_df$species
+
+primate_df <- primate_df %>% filter(!is.na(maxlongevity_y))
+
+head(primate_df)
+```
+
+
+```{r}
+#Checking if the names in the philogeny exaclty match the ones in the dataset
+chk <- name.check(phy = primate_tree, data = primate_df)
+summary(chk)
+```
+```{r}
+pruned_tree<-drop.tip(primate_tree,chk$tree_not_data)
+pruned_tree
+```
+```{r}
+# Find columns with missing data
+print(names(primate_df))
+columns_with_missing <- colSums(is.na(primate_df)) > 0
+
+# Print columns with missing data
+missing_columns <- names(columns_with_missing[columns_with_missing])
+print(missing_columns)
+
+primate_df[!complete.cases(primate_df), ]
+
+```
+
+
+```{r}
+# Prune tree to retain only matching tips
+pruned_data<-primate_df[pruned_tree$tip.label,]
+rownames(pruned_data) <- pruned_data$species
+pruned_data$body_mass <- as.numeric(pruned_data$body_mass)
+pruned_data_subset <- pruned_data[, c("body_mass","maxlongevity_y","gregariousness","allonursing","communal_nesting_babysitting","protection","provisioning_Male","provisioning_others","carryng_Male","carrying_others")]
+rownames(pruned_data_subset) <- pruned_data$species
+head(pruned_data_subset)
+```
+
+
+
+### phylogenetic PCA
+
+let’s go ahead and do a very simple analysis called a “phylogenetic principal components analysis” or phylogenetic PCA (Revell 2009) using our traits data.
+A phylogenetic PCA is exactly the same as a regular PCA except that we’re going to take the nonindependence of species into account when we compute the covariances (or correlations) between different traits.
+
+The interpretation of the first phylogenetic principal component is thus that it is the axis of greatest, multivariate evolution of our traits. Subsequent axes are successive orthogonal dimensions of maximum evolution.
+
+
+```{r}
+primate.pca<-phyl.pca(pruned_tree,pruned_data_subset, method="BM", mode="corr")
+primate.pca
+```
+
+Fromthis printout, we can see that phylogenetic PC1 loads strongly, and positively, for provisioning (both Male and Others), and communal nesting and male carrying. This principal component represents evolutionary variation in provisining, nesting, and male carrying. Remember that the sign of each principal component is arbitrary, so let’s flip it. 
+
+```{r}
+par(mar=c(4.1,4.1,2.1,1.1),las=1) ## set margins
+plot(primate.pca,main="")
+```
+The printout also tells us that PC2 loads primarily for increasing bodymass and decreasing
+gregariouness. By looking at the plot, we see that the first two principal components (PCs) do not
+explain alone most of the variation in our data
+
+```{r}
+par(cex.axis=0.8,mar=c(5.1,5.1,1.1,1.1))
+phylomorphospace(pruned_tree,
+scores(primate.pca)[,1:2],
+ftype="off",node.size=c(0,1),bty="n",las=1,
+xlab="PC1 (provisioning and communal nest)",
+ylab=expression(paste("PC2 ("%up%"body mass, "
+%down%"gregariouness)")))
+eco<-setNames(pruned_data_subset[,1],rownames(pruned_data_subset))
+ECO<-to.matrix(eco,levels(eco))
+tiplabels(pie=ECO[pruned_tree$tip.label,],cex=0.5)
+legend(x="bottomright",legend=levels(eco),cex=0.8,pch=21,
+pt.bg=rainbow(n=length(levels(eco))),pt.cex=1.5)
+```
