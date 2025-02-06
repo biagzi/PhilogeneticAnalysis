@@ -1,0 +1,146 @@
+---
+title: "TestInMammals"
+output: html_document
+---
+```{r}
+library(ape)
+library(ggtree)
+library(ggplot2)
+library(dplyr)
+library(readr)
+library(aplot)
+library(nlme)
+library(geiger)
+
+
+```
+
+## Test after Chapter 2
+### Tree
+
+```{r}
+vl_mammals.trees <- read.nexus("mammals_data/vl_nonvl_mammals.nex")
+vl_mammals.tree <- vl_mammals.trees[[1]]
+vl_mammals.tree$tip.label <- tolower(vl_mammals.tree$tip.label)
+vl_mammals.tree$tip.label 
+```
+
+### Traits dataset
+
+```{r}
+df <- read_csv("mammals_data/preliminar_mammals.csv")
+df <- as.data.frame(df)
+colnames(df)
+
+df$species_complete <- gsub(" ", "_", df$species_complete)
+rownames(df) <- df$species_complete
+df <- df %>%
+  filter(vocal_learning != "no_info")
+
+df$vocal_learning <- ifelse(df$vocal_learning == "yes", 1, 0)
+df <- df %>% filter(!is.na(average_maturity_log))
+df <- df %>% filter(!is.na(max_longevity))
+df$max_longevity_log = df$max_longevity
+df <- df[, c("vocal_learning","log_adult_weight","max_longevity_log","average_maturity_log")]
+df
+```
+
+
+```{r}
+chk <- name.check(phy = vl_mammals.tree, data = df)
+summary(chk)
+print(chk)
+tree <- drop.tip(vl_mammals.tree, chk$tree_not_data)
+```
+
+
+
+```{r}
+#Add arrow in some species and plot in a circular style
+plotTree(tree,fsize=0.6,lwd=1)
+
+subset <-df %>% filter(vocal_learning == 1)
+pr.species <- rownames(subset)
+nodes<-sapply(pr.species,grep,x=tree$tip.label)
+nodes #grep matches a character pattern to a vector and returns the positions of the elements of the vector in which that pattern is found.
+add.arrow(tree,tip=nodes,arrl=2,col="red",offset=2)
+```
+## Chapter 2 - Specific analysis using OLS
+
+```{r}
+## set margins of the plot
+par(mar=c(5.1,5.1,1.1,1.1))
+## create scatterplot
+plot(vocal_learning~max_longevity_log,data=df,
+xlab="max_longevity",
+ylab=expression(paste("vocal_learning")),
+pch=21,bg="gray",cex=1.2,las=1,cex.axis=0.7,
+cex.lab=0.9,bty="n")
+```
+```{r}
+fit.ols<-lm(vocal_learning~max_longevity_log,data=df)
+fit.ols
+summary(fit.ols)
+
+```
+
+
+
+```{r}
+vocalLearning<-setNames(df[,"vocal_learning"],
+rownames(df))
+bodyMass<-setNames(df[,"log_adult_weight"],
+rownames(df))
+Longevity<-setNames(df[,"max_longevity_log"],
+rownames(df))
+sexualMaturity<-setNames(df[,"average_maturity_log"],
+rownames(df))
+## compute PICs for home range and body size
+
+tree <- multi2di(tree)
+
+pic.vocal_learning<-pic(vocalLearning,tree)
+pic.bodymass<-pic(bodyMass,tree)
+pic.longevity<-pic(Longevity,tree)
+pic.sexualMaturity<-pic(sexualMaturity,tree)
+
+head(pic.vocal_learning,n=20)
+```
+
+```{r}
+## fit linear model to PICs without intercept
+#fit.pic<-lm(pic.vocal_learning~ pic.longevity/pic.bodymass + pic.sexualMaturity/pic.bodymass + 0)
+fit.pic<-lm(pic.vocal_learning~ pic.longevity + 0)
+fit.pic
+summary(fit.pic)
+```
+## Chapter 3 - Specific analysis using PGLS (Phylogenetic generalized least squares)
+
+```{r}
+str(df)  # Check data structure
+df$spp = rownames(df)
+```
+
+```{r}
+corLambda<-corPagel(value=1,phy=tree,form=~spp)
+corLambda
+```
+
+
+```{r}
+mammals.anova <- gls(vocal_learning ~ max_longevity_log + log_adult_weight + average_maturity_log, 
+                      data = df, correlation = corLambda)
+summary(mammals.anova)
+```
+The estimated lambda is: 0.8393084 
+
+
+
+# Chapter 4 - Fitting a Brownian model into the data
+
+```{r}
+## fit Brownian motion model using fitContinuous
+fitBM_gs<-fitContinuous(tree,Longevity)
+fitBM_gs
+```
+

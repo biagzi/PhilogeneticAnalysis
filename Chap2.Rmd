@@ -120,6 +120,9 @@ Prior to the foundational contribution of Felsenstein (1985), it would not have 
 The principle behind Felsenstein’s method is both remarkably elegant and incredibly simple. Felsenstein (1985) merely pointed out that while species data per se are not independent (owing to shared history due to the phylogeny), the differences (or contrasts) between species are. Likewise, the differences (if properly corrected) between trait values that have been interpolated for internal nodes are also independent. Thus, for a bifurcating N-taxon species tree consisting of observations for two or more continuous traits, one can compute a total of N −1 phylogenetically independent contrasts for each trait. These contrasts, once normalized, can then be used in standard regression or correlation analysis.
 
 Let's use our primate dataset again
+
+## Primate dataset
+
 ```{r}
 primate_tree <- read.nexus("primates_data/consensusTree_10kTrees_Primates_Version3.nex")
 
@@ -164,6 +167,8 @@ ylab=expression(paste("sociality (gregariouness and alloparenting")),
 pch=21,bg="gray",cex=1.2,log="xy",las=1,cex.axis=0.7,
 cex.lab=0.9,bty="n")
 ```
+
+### Modeling
 
 ```{r}
 fit.ols<-lm(log(sociality_interaction_total)~log(body_mass),data=df)
@@ -235,9 +240,11 @@ To do that in R, we can either append +0 or -1 to our formula in lm.24 Let’s u
 fit.pic<-lm(pic.sociality~pic.bodymass+0)
 fit.pic
 ```
+
 ```{r}
 summary(fit.pic)
 ```
+
 ```{r}
 x = log(df$body_mass)
 y = log(1 + df$sociality_total)

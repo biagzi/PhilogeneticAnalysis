@@ -1,0 +1,277 @@
+---
+title: "Chap3"
+output: html_document
+---
+## Chapter 3. Phylogenetic generalized least squares 
+---
+```{r}
+library(ape)
+library(ggtree)
+library(ggplot2)
+library(dplyr)
+library(readr)
+library(aplot)
+
+```
+
+How do animals see at night? Onemight suspect, based on the phenotypes of peculiar large eyed primate species such as the aye-aye (Daubentonia madagascariensis) or the Sunda slow loris (Nycticebus coucang), that having large eyes is key.
+In this chapter, we’ll describe a method called phylogenetic generalized least squares (PGLS) that can be used to test complex hypotheses about how traits relate to one another and to their environment.
+
+Last chapter, we learned how to use phylogenetically independent contrasts (PICs) to test for an evolutionary correlation between pairs of characters. Many comparative hypotheses, however, require the simultaneous analysis of more than two traits. For instance, in a single model, you might want to include both body size and limb length as predictors of home range size. Or perhaps you’d like to analyze the influence of both diel activity pattern and foraging
+mode on the evolution of eye size. Likewise, perhaps you’re not satisfied with the assumption that the amount of variation between species accumulates as a linear function of the time separating them2 that is required for
+PICs. Or, last, perhaps you’d like to fit amodel that combines continuous and discrete (i.e., factor)
+predictor variables, something that is specifically excluded in PIC regression.
+
+
+In fact, it has subsequently been shown that contrasts regression is a special case of GLS, as we’ll see below (Blomberg et al. 2012). GLS, however, also lets us be a bit more flexible about the specific correlation structure of
+the residual error in the model, and it also allows us to include discrete factors as independent
+variables—neither of which is easily done with contrasts. As such, we think that it’s quite
+important to learn about both methods.
+Henceforward, we’ll refer to the phylogenetic generalized least squares estimation method
+as PGLS.
+
+#### First, we will redo the PIC method, and then do the PGLS, to compare that they are similar:
+
+```{r}
+primate_tree <- read.nexus("primates_data/consensusTree_10kTrees_Primates_Version3.nex")
+
+primate_data <- read_csv("primates_data/primates_data_isler_vanschaik.csv")
+primate_data <- as.data.frame(primate_data)
+colnames(primate_data)[colnames(primate_data) == "Maximum lifespan [y]"] <- "maxlongevity_y"
+colnames(primate_data)[colnames(primate_data) == "Gregariousness"] <- "gregariousness"
+colnames(primate_data)[colnames(primate_data) == "Allonursing"] <- "allonursing"
+colnames(primate_data)[colnames(primate_data) == "Communal nesting, babysitting, retrieval"] <- "communal_nesting_babysitting"
+colnames(primate_data)[colnames(primate_data) == "Protection"] <- "protection"
+colnames(primate_data)[colnames(primate_data) == "Body mass [g]"] <- "body_mass"
+colnames(primate_data)[colnames(primate_data) == "Age at first reproduction [y]"] <- "reproduction_age_y"
+primate_data$species <- gsub("_", "_", primate_data$Genus_species)
+primate_df <- subset(primate_data, select = c(species,body_mass,maxlongevity_y,reproduction_age_y,gregariousness,allonursing,communal_nesting_babysitting,protection,provisioning_Male,provisioning_others,carryng_Male,carrying_others))
+primate_df$species <- tolower(primate_df$species)
+primate_tree$tip.label <- tolower(primate_tree$tip.label)
+rownames(primate_df) <- primate_df$species
+primate_df <- primate_df %>% filter(!is.na(maxlongevity_y))
+
+chk <- name.check(phy = primate_tree, data = primate_df)
+
+tree<-drop.tip(primate_tree,chk$tree_not_data)
+
+# Prune tree to retain only matching tips
+pruned_data<-primate_df[pruned_tree$tip.label,]
+pruned_data$body_mass <- as.numeric(pruned_data$body_mass)
+pruned_data$sociality_total <- 1 + pruned_data$gregariousness + pruned_data$allonursing + pruned_data$protection + pruned_data$communal_nesting_babysitting+pruned_data$carrying_others +pruned_data$provisioning_others
+pruned_data$sociality_interaction_total <- 1+pruned_data$gregariousness*pruned_data$communal_nesting_babysitting*(pruned_data$allonursing + pruned_data$protection + pruned_data$provisioning_others + pruned_data$carrying_others +pruned_data$carryng_Male +pruned_data$provisioning_Male)
+#,"gregariousness","allonursing","communal_nesting_babysitting","protection","provisioning_Male","provisioning_others","carryng_Male","carrying_others"
+df <- pruned_data[, c("body_mass","maxlongevity_y","sociality_total","sociality_interaction_total")]
+rownames(df) <- pruned_data$species
+head(df)
+
+```
+```{r}
+## set margins of the plot
+par(mar=c(5.1,5.1,1.1,1.1))
+## create scatterplot
+plot(sociality_interaction_total~maxlongevity_y,data=df,
+xlab="longevity",
+ylab=expression(paste("sociality (gregariouness and alloparenting")),
+pch=21,bg="gray",cex=1.2,log="xy",las=1,cex.axis=0.7,
+cex.lab=0.9,bty="n")
+```
+
+
+```{r}
+## pull our home range and body mass as
+## numeric vectors
+sociality<-setNames(df[,"sociality_interaction_total"],
+rownames(df))
+bodyMass<-setNames(df[,"body_mass"],
+rownames(df))
+longevity<-setNames(df[,"maxlongevity_y"],
+rownames(df))
+## compute PICs for home range and body size
+
+#tree <- root(tree, resolve.root = TRUE)
+tree <- multi2di(tree)
+
+pic.sociality<-pic(log(sociality),tree)
+pic.bodymass<-pic(log(bodyMass),tree)
+pic.longevity<-pic(log(longevity),tree)
+
+```
+
+```{r}
+## fit linear model to PICs without intercept
+pic.primate<-lm(pic.sociality~pic.longevity+0)
+pic.primate
+summary(pic.primate)
+```
+```{r}
+## set margins
+par(mfrow=c(1,2),
+mar=c(5.1,4.6,2.1,1.1))
+## plot our raw data in the original space
+plot(log(df$sociality_interaction_total)~log(df$maxlongevity_y),
+pch=21,bg=palette()[4],cex=1.2,
+bty="n",xlab="log(longevity)",
+ylab="log(sociality)",
+cex.lab=0.8,cex.axis=0.7,las=1)
+mtext("(a)",line=0,adj=0,cex=0.8)
+
+## graph scatterplot of contrasts
+plot(pic.sociality~pic.longevity,
+xlab="PICs for log(longevity)",
+ylab="PICs for log(sociality)",
+pch=21,bg=palette()[4],cex=1.2,
+cex.axis=0.7,cex.lab=0.9,bty="n")
+## add gridlines to the plot
+abline(h=0,lty="dotted")
+abline(v=0,lty="dotted")
+## reset graphing limits of the plot to the
+## x/y range of our PICs
+clip(min(pic.longevity),max(pic.longevity),
+min(pic.sociality),max(pic.sociality))
+## graph our fitted line
+abline(fit.pic,lwd=2,col="darkgray")
+mtext("(b)",line=0,adj=0,cex=0.8)
+```
+
+Now, Fitting a linear regression model using PGLS
+
+
+```{r,warning=FALSE}
+library(nlme)
+```
+
+For our next step, we need to take our phylogenetic tree of primates and convert it into a
+special type of R object called a correlation structure.12
+This is what our GLS model-fitting function will take as input, right alongside our data. The
+correlation structure will then be used to define the distribution of the residuals from our linear
+model.
+For now, we’ll build our "corStruct" object using the ape function corBrownian.
+Importantly, when we create our correlation structure (corBM), we must specify the order
+of the taxa in our data, which is done using the argument form. Otherwise, it’ll be assumed
+that the order of the rows in our input data frame matches the order of the tip labels of the tree,
+which can be very dangerous!
+
+```{r}
+spp<-rownames(df)
+corBM<-corBrownian(phy=tree,form=~spp)
+corBM
+head(df)
+```
+
+```{r}
+pgls.primate<-gls(log(sociality_interaction_total)~log(maxlongevity_y),data=df,correlation=corBM)
+summary(pgls.primate)
+```
+```{r}
+#Comparing:
+coef(pic.primate)
+coef(pgls.primate)
+abs(coef(pic.primate)[1]-coef(pgls.primate)[2])
+```
+Conclusion: they are the same
+
+In the previous section, we used the simplest residual error correlation structure for phylogenetic
+data, which is called corBrownian. As we noted previously, this structure simply
+assumes that the correlation between the residual errors of any pair of species in the
+tree is directly proportional to the height above the root of the common ancestor of that
+pair.
+
+```{r}
+plotTree(tree,fsize=0.5,ylim=c(0,80))
+## add a horizontal axis
+axis(1)
+## add edge labels giving the branch lengths
+edgelabels(round(tree$edge.length,2),pos=3,
+frame="none",cex=0.4)
+mtext("(a)",line=1,adj=0)
+```
+
+
+```{r}
+set.seed(88)
+## simulate a random 5-taxon tree
+tree_example<-pbtree(n=5,scale=10,tip.label=LETTERS[5:1])
+## subdivide our plotting area into two panels
+par(mfrow=c(2,1))
+## plot the tree
+plotTree(tree_example,fsize=1,
+ylim=c(0.5,5.4))
+## add a horizontal axis
+axis(1)
+## add edge labels giving the branch lengths
+edgelabels(round(tree_example$edge.length,2),pos=3,
+frame="none",cex=0.9)
+mtext("(a)",line=1,adj=0)
+## switch to the second panel
+plot.new()
+## set new plot margins and plot dimensions
+par(mar=c(1.1,0.1,4.1,0.1))
+plot.window(xlim=c(0,6),ylim=c(0,6))
+## add a grid of lines for our correlation matrix
+lines(c(0,6,6,0,0),c(0,0,6,6,0))
+for(i in 1:5) lines(c(i,i),c(0,6))
+for(i in 1:5) lines(c(0,6),c(i,i))
+## compute the assumed correlation structure
+V<-cov2cor(vcv(tree_example)[LETTERS[1:5],LETTERS[1:5]])
+## print it into the boxes of our grid
+for(i in 1:5) text(i+0.5,5.5,LETTERS[i],cex=1)
+for(i in 1:5) text(0.5,5.5-i,LETTERS[i],cex=1)
+for(i in 1:5) for(j in 1:5) text(0.5+i,5.5-j,
+round(V[i,j],2),cex=1)
+mtext("(b)",line=1,adj=0)
+```
+To get the correlation between taxa C and D, we compute the distance from the
+root to their common ancestor (4.36 + 2.96 = 7.32) and divide it by the total length of the tree
+(10) to obtain the correlation, which (rounded to two digits) is 0.73.
+
+A very simple relaxation of our model might be via the introduction of a single additional
+parameter, let’s say λ, as a multiplier of the off-diagonal elements of the matrix (Pagel 1999a).
+The neat thing about thismodel is that it has bothOLS (when λ = 0) and standard PGLS (when
+λ = 1) as special cases.
+We can figure out which value of λ is best supported by the pattern in our data by estimating
+it using a procedure called maximum likelihood.
+
+You may notice that the arguments taken by corPagel are highly similar to those of
+corBrownian but also include the additional argument value, which we have assigned
+1. This is the initial condition for our λ scaling factor that we’ll be estimating at the same time
+as we fit the regression model to our data. The specific starting condition for λ isn’t too important,
+but we should be sure to choose a number that is on the range over which λ is defined.23
+Since λ is always defined between 0 and 1, it’s a pretty safe bet to set the initial value of λ to 1.24
+We can now proceed to fit the same regression model as before to our data but this time
+with our updated correlation structure. Note again that the particular value we specified for λ
+is just a starting value. The final value of λ will be estimated jointly with our fitted regression
+model.
+
+```{r}
+corLambda<-corPagel(value=1,phy=tree,form=~spp)
+corLambda
+```
+
+```{r}
+pgls.Lambda<-gls(log(sociality_interaction_total)~log(maxlongevity_y),
+data=df,correlation=corLambda)
+summary(pgls.Lambda)
+```
+Our lambda was estimated as:
+Parameter estimate(s):
+  lambda 
+1.003702 
+
+This number is extremely close to 1 but a tiny bit higher.
+That means that under our model, close relatives have correlated residuals and even a bit
+more so than they would under our original model—and we still conclude that there is an
+evolutionary correlation between the two traits.
+
+Perhaps the most attractive feature of PGLS when compared to contrasts regression is that it’s very straightforward to fit a linear model that includes one or more factors as independent variables (i.e., an ANOVA model) or a combination of continuous and discrete factors (i.e., an ANCOVA).
+
+```{r}
+primate.anova<-gls(log(sociality_interaction_total)~log(maxlongevity_y)+ log(body_mass),data=df,
+correlation=corBM)
+anova(primate.anova)
+```
+
+In summary, PGLS is a more flexible method to test for evolutionary correlations, and it
+allows for alternative models of the residual error in y given our fitted model, multiple predictor
+variables, and both continuous and discrete predictors. All assumptions in PGLS are
+assumptions about the distribution of species’ residuals from the linear model.

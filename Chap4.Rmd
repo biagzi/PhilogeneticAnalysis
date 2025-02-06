@@ -1,0 +1,225 @@
+---
+title: "Chap4"
+output: html_document
+---
+
+## Chapter 4. Modeling continuous character evolution on a phylogeny 
+---
+```{r}
+library(ape)
+library(ggtree)
+library(ggplot2)
+library(dplyr)
+library(readr)
+library(aplot)
+library(geiger)
+
+```
+
+### Simulating Brownian motion:
+
+```{r}
+# set values for time steps and sigma squared parameter
+t<-0:100
+sig2<-0.01
+## simulate a set of random changes
+x<-rnorm(n=length(t)-1,sd=sqrt(sig2))
+## compute their cumulative sum
+x<-c(0,cumsum(x))
+# create a plot with nice margins
+par(mar=c(5.1,4.1,2.1,2.1))
+plot(t,x,type="l",ylim=c(-2,2),bty="n",
+xlab="time",ylab="trait value",las=1,
+cex.axis=0.8)
+```
+You may have noticed that instead of simulating additive Brownian evolution step-by-step, we began by simulating all the steps, then we proceeded to compute the state of the process through time by calculating the cumulative sum from time 0 through t for all possible values of t. This is possible to do because a property of the model is that the distribution of changes under Brownian motion is invariant and does not depend on the state of the chain.
+
+
+```{r}
+# set number of simulations
+nsim<-100
+# create matrix of random normal deviates
+X<-matrix(rnorm(n=nsim*(length(t)-1),sd=sqrt(sig2)),
+nsim,length(t)-1)
+# calculate the cumulative sum of these deviates
+# this is now a simulation of Brownian motion
+X<-cbind(rep(0,nsim),t(apply(X,1,cumsum)))
+# plot the first one
+par(mar=c(5.1,4.1,2.1,2.1))
+plot(t,X[1,],ylim=c(-2,2),type="l",bty="n",
+xlab="time",ylab="trait value",las=1,
+cex.axis=0.8)
+# plot the rest
+invisible(apply(X[2:nsim,],1,function(x,t) lines(t,x),t=t))
+```
+
+In fact, the expected variance under Brownian motion is just σ2 multiplied by t (Felsenstein 1973).
+To see this, we can simply take our last set of 100 replicate simulations and, for each value
+of t, compute the variance across the entire set of simulations.
+
+```{r}
+# calculate variance of columns
+v<-apply(X,2,var)
+# plot the results
+par(mar=c(5.1,4.1,2.1,2.1))
+plot(t,v,ylim=c(0,1),type="l",xlab="time",
+ylab="variance",bty="n",las=1,
+cex.axis=0.8)
+lines(t,t*sig2,lwd=3,col=rgb(0,0,0,0.1))
+legend("topleft",c("observed variance","expected variance"),
+lwd=c(1,3),col=c("black",rgb(0,0,0,0.1)),
+bty="n",cex=0.8)
+
+#Likewise, the variance at the end of the simulation should just be σ2 (0.01, in our case)
+#multiplied by the total time elapsed (100), or about 1.
+# find variance at the end of the simulations
+var(X[,length(t)])
+```
+
+
+### Brownianmotion on a phylogeny
+
+```{r}
+## load phytools package
+library(phytools)
+## simulate a tree and Brownian evolution on that
+## tree using simBMphylo
+object<-simBMphylo(n=6,t=100,sig2=0.01,
+fsize=0.8,cex.axis=0.6,cex.lab=0.8,
+las=1)
+```
+since lineages can only begin to differentiate after they’ve diverged, the amount of variation that tends to accrue between species appears to increase as a function of the amount of evolutionary time since they shared common ancestry
+
+properties of Brownian motion:
+is a stochastic, directionless process. A single realization of Brownian motion might move up or down (figure 4.1),
+
+In fact, if we conducted many phylogenetic Brownian simulations on a given phylogeny,
+instead of just one, we would see that on average, the correlation between related taxa would
+be exactly proportional to the fraction of shared history they have in common: in other words,
+the time from the root of the tree to their MRCA,5 divided by the total tree length.
+
+A scatter plot matrix in which each x, y coordinate of each point in each panel represents the pair of phenotypic values for a single simulation of the Brownian process in each pair of species corresponding to the panel of our matrix.
+If the scatter of points for a hypothetical pair of species i and j is tightly clustered to the 1:1 line, then this indicates that (across many replicates of the evolutionary process) species i and j always tend to evolve similar values for the trait. By contrast, if the scatter of points for species i and j is diffuse and uncorrelated, this indicates that there is no tendency in our simulation for species i and j to evolve similar values of the trait acrossmany instances of Brownian evolution on our tree from figure 4.5.
+
+```{r}
+## pull the phylogeny out of the object we simulated
+## for figure 4.5 using simBMphylo
+tree<-object$tree
+## simulate 1000 instance of Brownian evolution on that
+## tree
+X<-fastBM(tree,nsim=1000)
+
+## set the orientation of the axis labels to be
+## horizontal
+par(las=1)
+## create a scatterplot matrix from our simulated
+## data using pairs
+pairs(t(X)[,tree$tip.label[6:1]],pch=19,
+col=make.transparent("blue",0.05),
+cex.axis=0.9)
+```
+### Fitting a Borwninan model
+
+The Brownian model has two different parameters that we’ll try to estimate.
+The first of these is the “instantaneous variance” of the stochastic evolutionary process under
+Brownian motion, usually referred to as the evolutionary rate: σ2.
+
+The second of these is the initial state of the process. This corresponds to the ancestral
+condition at the root node of our tree, and here we’ll denote this quantity as x0.
+
+To estimate the two parameters of our model from a set of observations for species and our tree, we need a criterion for choosing values of σ2 and x0 that best fit our data.
+One strategy is to select the values that maximize the probability of obtaining the data that we’ve observed.
+This strategy is called estimation by maximum likelihood and was initially developed by Ronald Fisher near the start of the twentieth century (Fisher 1922; see historical review in Aldrich 1997). 
+Maximum likelihood estimators have since been shown to possess many desirable statistical properties, such as consistency, efficiency, and asymptotic unbiasedness (Edwards 1992).7
+
+```{r}
+## read bacterial data from file
+bacteria.data<-read.csv("data/bac_rates.csv", row.names=1)
+head(bacteria.data,3)
+```
+
+```{r}
+bacteria.tree<-read.tree("data/bac_rates.phy")
+print(bacteria.tree,printlen=2)
+
+## graph phylogeny using plotTree
+plotTree(bacteria.tree,ftype="i",fsize=0.5,
+lwd=1,mar=c(2.1,2.1,0.1,1.1))
+## add a horizontal axis to our plot
+axis(1,at=seq(0,1,length.out=5),cex.axis=0.8)
+```
+```{r}
+name.check(bacteria.tree,bacteria.data)
+genome_size<-bacteria.data[,"Genome_Size_Mb"]
+genome_size
+names(genome_size)<-rownames(bacteria.data)
+head(genome_size)
+```
+
+```{r}
+## fit Brownian motion model using fitContinuous
+fitBM_gs<-fitContinuous(bacteria.tree,genome_size)
+fitBM_gs
+```
+
+From the summary of our fitted model, we see that the maximum likelihood estimate (MLE) of σ2 is about 25.0 and that the MLE of the root state x0 (here given as z0) is around 1.98
+
+How do we interpret these values? Well, since our genome sizes have been measured in Megabases12 (Mb), a σ2 of 25 indicates that under a Brownian process, we’d expect a large number of independently evolving lineages to accumulate the variance among each other of
+25 Mb2 after one unit of time.13
+
+Our MLE of x0 of 1.98 means that the most likely state at the root of the tree, under our
+model, is a genome size of 1.98 Mb.
+
+The printout also gives us some information about the model fit to our data: the model likelihood and the Akaike information criterion (AIC and AICc14) values.
+These quantities are not particularly interpretable in absolute terms—especially since the branch lengths of our tree are not in any especially meaningful units. They will become much more important when we progress to comparing alternative models of evolution for our data later on in this chapter.
+
+To find the MLEs, fitContinuous uses numerical optimization, and in this case, it tells us how many independent optimization iterations were used (optimization iterations) and how frequently optimization converged on the same, best solution.
+Brownian motion is such a simple model that most often this latter quantity will be 1.00, indicating that the optimizer found the same optimal solution in 100 percent of iterations. For more complex models, the fraction will often be lower than 100 percent.15
+
+```{r}
+## pull our mutation accumulation rate as a named vector
+mutation<-setNames(bacteria.data[,"Accumulation_Rate"],
+rownames(bacteria.data))
+head(mutation)
+```
+
+the very highly skewed distribution that we see for this trait is nonetheless a strong signal that Brownian evolution is very
+likely a bad fit to this trait on its original scale. Let’s transform mutation accumulation rate to a log-scale and plot that too.
+
+```{r}
+## set up for side-by-side plots
+par(mfrow=c(1,2),mar=c(6.1,4.1,2.1,1.1))
+## histogram of mutation accumulation rates on original scale
+hist(mutation,main="",las=2,xlab="",
+cex.axis=0.7,cex.lab=0.9,
+breaks=seq(min(mutation),max(mutation),
+length.out=12))
+mtext("(a)",adj=0,line=1)
+mtext("rate",side=1,line=4,cex=0.9)
+## histogram of mutation accumulation rates on log scale
+ln_mutation<-log(mutation)
+hist(ln_mutation,main="",las=2,xlab="",
+cex.axis=0.7,cex.lab=0.9,
+breaks=seq(min(ln_mutation),max(ln_mutation),
+length.out=12))
+mtext("(b)",adj=0,line=1)
+mtext("ln(rate)",side=1,line=4,cex=0.9)
+```
+
+```{r}
+## fit Brownian motion model to log(mutation accumulation)
+fitBM_ar<-fitContinuous(bacteria.tree,ln_mutation)
+fitBM_ar
+```
+
+
+### Phylogenetic signal
+
+phylogenetic signal: which we’d define as the tendency for related species to resemble one another more than expected by chance (Revell et al. 2008).
+Two different methods for measuring phylogenetic signal of quantitative characters: Blomberg et al.’s (2003) K and Pagel’s (1999a) ..
+
+
+
+
+
+
