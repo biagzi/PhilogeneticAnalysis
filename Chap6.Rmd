@@ -1,0 +1,362 @@
+---
+title: "Chap6"
+output:
+  pdf_document: default
+  html_document: default
+---
+
+# Modeling discrete character evolution on a phylogeny
+
+The dominant model for the evolution of discrete characters on phylogenies is a model that has
+been named the Mk model (Lewis 2001). The Mk model is so denominated because it describes a continuous-time, discrete k-state Markov process.
+The Mk process is one in which changes can occur between states at any time, and the rate of change1 to other states depends only on the current state of the chain and not on any prior state or on how long the chain has been in its current state.
+
+### Simulating an Mk model
+
+Here, we’ll use the phytools function sim.history, which simulates the entire history of a character on
+the tree—not just the end state at the tips—and we’ll use it to simulate data for a binary (0/1)
+character under three different evolutionary scenarios.6
+
+```{r}
+## load phytools
+library(phytools)
+set.seed(0)  # Set the seed to 123
+```
+
+```{r}
+## assign colors for the two states
+colors<-setNames(c("gray","black"),0:1)
+## simulate a stochastic pure-birth tree with 100 taxa
+tree<-pbtree(n=100,scale=1)
+## divide plotting area into three panels
+par(mfrow=c(1,3))
+
+## Q matrix for simulation 1: equal backward & forward
+## rates (ER)
+Q1<-matrix(c(-1,0.75,0.75,-1),2,2,
+byrow=TRUE,dimnames=list(0:1,0:1))
+Q1
+## simulate ER character evolution and plot
+plot(sim.history(tree,Q1,anc="0",message=FALSE),
+colors,ftype="off",mar=c(1.1,1.1,1.1,0.1))
+mtext("(a)",line=-1,adj=0)
+legend(x="bottomleft",legend=c("0","1"),
+pt.cex=1.5,pch=15,col=colors,
+bty="n")
+
+## Q matrix for simulation 2: different backward &
+## forward transition rates (ARD)
+Q2<-matrix(c(-1,0.25,0.025,-1),2,2,
+byrow=TRUE,dimnames=list(0:1,0:1))
+Q2
+## simulate ARD character evolution and plot
+plot(sim.history(tree,Q2,anc="0",
+direction="row_to_column",message=FALSE),
+colors,ftype="off",mar=c(1.1,1.1,1.1,0.1))
+mtext("(b)",line=-1,adj=0)
+
+
+## Q matrix for (effectively) irreversible trait
+## evolution (changes from 1->0, but not the reverse)
+Q3<-matrix(c(-1,0.25,1e-12,-1),2,2,
+byrow=TRUE,dimnames=list(0:1,0:1))
+Q3
+## simulate irreversible character evolution and plot
+plot(sim.history(tree,Q3,anc="0",
+direction="row_to_column",
+message=FALSE),colors,ftype="off",
+mar=c(1.1,1.1,1.1,0.1))
+mtext("(c)",line=-1,adj=0)
+```
+we first (a) simulated a rate of change from 0 to 1 and 1 to 0 that was
+equal to one another. Next, (b) we simulated a rate of change that was 10 times higher from
+0 to 1 than the reverse. Finally, (c) we simulated the evolution of a discrete character that can
+only change from 1 to 0 but never the reverse
+
+### Fitting the Mk model to data
+
+For any particular transition matrix, Q, we compute its likelihood as the probability of a pattern of character states at the tips of the tree. If we proceed to find the value of Q that maximizes this probability, we’ll have found the maximum likelihood estimate (MLE) of Q9 (Yang 2006).
+
+```{r}
+library(geiger)
+
+## read data matrix
+sqData<-read.csv("data/squamate-data.csv",row.names=1)
+## print dimensions of our data frame
+dim(sqData)
+
+## read phylogenetic tree
+sqTree<-read.nexus("data/squamate.tre")
+print(sqTree,printlen=2)
+```
+```{r}
+## plot our tree
+plotTree(sqTree,type="fan",lwd=1,fsize=0.3,ftype="i")
+## check name matching
+chk<-name.check(sqTree,sqData)
+summary(chk)
+
+## drop tips of tree that are missing from data matrix
+sqTree.pruned<-drop.tip(sqTree,chk$tree_not_data)
+## drop rows of matrix that are missing from tree
+sqData.pruned<-sqData[!(rownames(sqData)%in%
+chk$data_not_tree),,drop=FALSE]
+
+## extract discrete trait
+toes<-setNames(as.factor(sqData.pruned[,"rear.toes"]),
+rownames(sqData.pruned))
+head(toes)
+
+```
+```{r}
+head(toes)
+```
+
+
+We’re ready to fit our models now.
+To do this, we’ll use the function fitDiscrete in geiger.
+Other R functions also fit an Mk model, such as fitMk in the phytools package. Some
+differences13 exist between the default model that is implemented in the two functions, but
+both are valid.
+
+#### The Equal-rates Model (ER Model)
+The first variant of the Mkmodel that we’re going to fit is called the “equal-rates” or ER model
+(figure 6.1a). This model is exactly as it sounds—it fits a single transition rate between all pairs of states for our discrete trait (Harmon 2019).
+
+```{r}
+## fit ER model to squamate toe data using fitDiscrete
+fitER<-fitDiscrete(sqTree.pruned,toes,model="ER")
+print(fitER,digits=3)
+```
+
+This shows the parameter estimate, log-likelihood AIC, and convergence diagnostics for our
+ER fit. For an ER model, there is just one model parameter, the transition rate, q. We estimate
+q = 0.00103.
+How should we think about our estimated value of q? Remember, q is our instantaneous
+transition rate among states. As such, the expected number of transitions given a particular
+amount of time, t, can be calculated as the simple product of q and t (Yang 2006).14
+In addition to printing out the results of our fitted model, we can also graph the model. To
+do this, we’ll use another generic plottingmethod fromthe phytools package.
+
+
+```{r}
+## plot fitted ER model
+plot(fitER,mar=rep(0,4),signif=5)
+```
+
+#### The symmetric transition model (SYM)
+In addition to the ER model, another popular discrete character model is a model called the
+“symmetric rates” model, SYM (Harmon 2019).
+This model assumes that the rate of transition from each character state i to each state j is
+equal to the rate of change from state j to state i but that each pair of character states can have
+a different rate.
+Let’s go ahead and fit this model to our squamate toe data and then plot15 our fitted model
+(figure 6.4).
+
+
+```{r}
+## fit SYM model
+fitSYM<-fitDiscrete(sqTree.pruned,toes,model="SYM")
+print(fitSYM,digits=3)
+
+## graph fitted SYM model
+plot(fitSYM,show.zeros=FALSE,mar=rep(0,4),signif=5)
+```
+
+#### All-rates-different model
+Within the extended Mk framework, the most complicated model imaginable16 is one in which
+every type of transition is allowed to occur with a different rate. This is called the “all-rates different” model or ARD (Harmon 2019).
+
+```{r}
+## fit ARD model
+fitARD<-fitDiscrete(sqTree.pruned,toes,model="ARD")
+print(fitARD,digits=3)
+## fit ARD model
+fitARD<-fitDiscrete(sqTree.pruned,toes,model="ARD")
+print(fitARD,digits=3)
+```
+
+#### Custom transition models: An ordered evolution model
+
+So far, we’ve already seen what are most likely the three most commonly used models for
+discrete character evolution in phylogenetic comparative analyses: ER, SYM, and ARD.
+However, these three models do not by any means completely comprise the range of possible
+models we could imagine fitting to the evolution of a discrete character trait on the tree!
+
+For instance, we might hypothesize that toes can be lost and not reacquired, or perhaps that
+toes can be lost and regained, but that only changes between adjacent states (e.g., from five to
+four, from two to three, and so on) can occur (Brandley et al. 2008).
+fitDiscrete17 gives us the flexibility to specify this kind of model. Theway we need to
+do it is by first creating a design matrix.
+Our designmatrix will be the same size as Q, but we’ll populate it with integers.
+
+Let’s fit two different models now. The first of these is an ordered model in which changes
+are permitted between all pairs of adjacent states and in which we will allow these changes to
+occur at different rates.
+The second of these will be a directional model in which we suppose that digits can be
+lost but cannot be reacquired. We further suppose that every different type of digit loss (i.e.,
+from five to four digits, from four to three digits, etc.) is allowed to proceed at a different
+rate.
+
+```{r}
+## create design matrix for bi-directional
+## ordered model
+ordered.model<-matrix(c(
+0,1,0,0,0,0,
+2,0,3,0,0,0,
+0,4,0,5,0,0,
+0,0,6,0,7,0,
+0,0,0,8,0,9,
+0,0,0,0,10,0),6,6,byrow=TRUE,
+dimnames=list(0:5,0:5))
+ordered.model
+
+## create design matrix for directional ordered
+## model
+directional.model<-matrix(c(
+0,0,0,0,0,0,
+1,0,0,0,0,0,
+0,2,0,0,0,0,
+0,0,3,0,0,0,
+0,0,0,4,0,0,
+0,0,0,0,5,0),6,6,byrow=TRUE,
+dimnames=list(0:5,0:5))
+directional.model
+```
+
+```{r}
+## fit bi-directional ordered model
+fitOrdered<-fitDiscrete(sqTree.pruned,toes,
+model=ordered.model,surpressWarnings=TRUE)
+print(fitOrdered,digits=3)
+```
+
+```{r}
+## fit directional (loss only) ordered model
+fitDirectional<-fitDiscrete(sqTree.pruned,toes,
+model=directional.model,surpressWarnings=TRUE)
+print(fitDirectional,digits=3)
+```
+
+```{r}
+## split plot area into two panels
+par(mfrow=c(1,2))
+## plot ordered and directional models
+plot(fitOrdered,show.zeros=FALSE,signif=5,
+mar=c(0.1,1.1,0.1,0.1))
+mtext("(a)",line=-2,adj=0,cex=1.5)
+plot(fitDirectional,show.zeros=FALSE,signif=5,
+mar=c(0.1,1.1,0.1,0.1))
+mtext("(b)",line=-2,adj=0,cex=1.5)
+```
+
+The number of differentmodels we can fit to discrete character data is virtually limited only
+by the bounds of our imagination; however, as a general rule, we typically recommend fitting
+models that are relatively simple, biologically justifiable, or (ideally) both.
+
+#### Comparing alternative discrete charactermodels
+
+With likelihood, it’s also relatively straightforward to compare alternative models and thus
+identify the model that is best supported by our data.
+One simple way to do this is using the likelihood ratio test. According to the theory of likelihoods,
+two times the difference in log-likelihoods of nested models20 should be distributed
+as a χ2 with degrees of freedom equal to the difference in the number of parameters between
+the two fitted models (Wilks 1938).
+
+```{r}
+library(lmtest)
+## likelihood-ratio test comparing ER & SYM
+lrtest(fitER,fitSYM)
+
+## likelihood-ratio test comparing ER & ARD
+lrtest(fitER,fitARD)
+
+## likelihood-ratio test comparing SYM & ARD
+lrtest(fitSYM,fitARD)
+```
+
+In this set of hypothesis tests, we first compared the ER and SYM models. Here, since P> 0.05, we failed to reject the simpler ER model.
+Next, we compared the ER and ARD models. In this second case, since P<0.05, we rejected
+the simpler ER model in favor of the ARD model.
+Finally,we compared the SYM and ARD models, also rejecting the simpler SYM model.
+In addition to this set of comparisons, we can also compare our reversible ordered and our
+directional models, and we can compare either of these models to the ARD model.22 Let’s do
+just that.
+
+```{r}
+## compare directional and ordered
+lrtest(fitDirectional,fitOrdered)
+## compare direction and ARD
+lrtest(fitDirectional,fitARD)
+## compare ordered and ARD
+lrtest(fitOrdered,fitARD)
+```
+
+Here in all three comparisons, we failed to reject the simpler model (the directional model
+in the former two comparisons and the reversible ordered model in the latter most).
+Via this set of comparisons, we’re starting to build a picture that the ordered models may be
+better supported by the data than the ER, SYM, and ARD models.
+
+This makes some degree of both biological and mathematical sense.
+First, it’s logical to imagine based on developmental biology that a model in which evolution
+tends to involve successive losses (or gains) of digits may be more consistent with our data
+than a model in which any and all types of changes can occur—particularly if that model also
+supposes that these changes occur at the same rate (Brandley et al. 2008)!
+Second, these two models generally involve the estimation of fewer parameters (five or ten)
+than the considerably more complex SYM (fifteen) and ARD (thirty) models.
+Nonetheless, it would be convenient if we could compare all models to each other. In fact,
+we can do exactly that using the Akaike information criterion, AIC. Let’s try.
+Here, we’ll sort the models in order of complexity, but we don’t have to do that—we could
+have listed our models in any order.
+
+```{r}
+## accumulate AIC scores of all five models into
+## a vector
+aic<-setNames(c(AIC(fitER),AIC(fitDirectional),
+AIC(fitOrdered),AIC(fitSYM),AIC(fitARD)),
+c("ER","Directional","Ordered","SYM","ARD"))
+aic
+```
+
+This result tells us that the “directional” model is the model best supported by the data
+because it has the lowest AIC score.
+AIC already takes the number of parameters estimated from the data into account, so there
+is no additional correction necessary to reach this conclusion. Nonetheless (as a rough rule of
+thumb),many investigators consider AIC scores within around two units of each other to indicate
+similar or ambiguous support for themodels under comparison (Burnham and Anderson
+2003). Since our AIC score for the directional model is about three units better than the next
+best-supported model, we can feel reasonably confident that the directional model is the best
+of this set.
+From AIC scores, we can also compute Akaike weights. Akaike weights show the weight
+of evidence in support of each model in our data. Let’s compute these using a function called
+aic.w in the phytools package.
+
+```{r}
+aic.w(aic)
+```
+
+```{r}
+round(data.frame(
+k=c(fitER$opt$k,fitDirectional$opt$k,
+fitOrdered$opt$k,fitSYM$opt$k,fitARD$opt$k),
+logL=c(logLik(fitER),logLik(fitDirectional),
+logLik(fitOrdered),logLik(fitSYM),logLik(fitARD)),
+AIC=aic,Akaike.w=as.vector(aic.w(aic))),3)
+```
+
+The weight for the directional model is much higher than the rest. This affirms our earlier
+conclusion that a directional model (in which digits tend to be lost but not reacquired) is best
+supported in the set, but an alternative model in which digits are both lost and regained, albeit
+in an ordered fashion, also garners some support. The other models (ER, SYM, and ARD) are
+relatively poorly supported by the data.
+In summary, the Mk model and its relatives provide a flexible and powerful way to evaluate
+the evolution of a discrete character on a phylogenetic tree. In the next chapters, we will add
+even more to our discrete character toolbox.
+
+#### Summary
+
+In summary, theMk model and its relatives provide a flexible and powerful way to evaluate
+the evolution of a discrete character on a phylogenetic tree.
+
+
+

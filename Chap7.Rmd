@@ -1,0 +1,1088 @@
+---
+title: "Chap7"
+output: html_document
+---
+
+# Other models of discrete character evolution
+
+## Correlated binary traits
+
+The first method we’ll discuss in this chapter is one that was first developed by Mark Pagel
+(1994) to test for an evolutionary relationship between two binary characters. This approach,
+often called the Pagel94 model, is really quite simple at its core.
+
+According to the method, we’ll fit two different models to our data.
+The first of these is called the independent model. Under this model, sensibly, our two different binary characters evolve independently from one another on the tree. This is exactly
+equivalent to fitting two, separate Mk models (from chapter 6) to our two binary traits. Since
+the characters are being treated as if they evolve independently, the total likelihood of the fitted model is just the product of the likelihoods for each trait.
+
+The second model, by contrast, is usually referred to as the dependent model. Under this
+model, the rate of evolution for character one is allowed to depend on the state for character two and/or vice versa (Pagel 1994).
+
+### Pagel94 model
+
+```{r}
+## load the phytools package
+library(phytools)
+## read the Benun Sutton & Wilson phylogeny
+bonyfish.tree<-read.tree(file="data/bonyfish.tre")
+print(bonyfish.tree,printlen=3)
+
+## read the phenotypic trait data
+bonyfish.data<-read.csv(file="data/bonyfish.csv",row.names=1,
+stringsAsFactors=TRUE)
+head(bonyfish.data)
+```
+As we’ve done in previous chapters, here we set the read.csv argument
+stringsAsFactors = TRUE to ensure that our discrete character data are read into R
+as a factor instead of as a simple character string.
+
+```{r}
+## plot the tree with adjacent data matrix
+object<-plotTree.datamatrix(bonyfish.tree,bonyfish.data,
+fsize=0.5,yexp=1,header=FALSE,xexp=1.45,
+palettes=c("YlOrRd","PuBuGn"))
+## add a legend for trait 1
+leg<-legend(x="topright",names(object$colors$spawning_mode),
+cex=0.7,pch=22,pt.bg=object$colors$spawning_mode,
+pt.cex=1.5,bty="n",title="spawning mode")
+## add a second legend for trait 2
+leg<-legend(x=leg$rect$left+4.7,y=leg$rect$top-leg$rect$h,
+names(object$colors$paternal_care),cex=0.7,
+pch=22,pt.bg=object$colors$paternal_care,pt.cex=1.5,
+bty="n",title="paternal care")
+```
+
+Based on this plot (figure 7.1), it’s a little hard to tell whether the two different binary traits are evolving dependently or independently.
+Let’s fit the Pagel (1994) model to find out.
+To do that, we’ll use the phytools function fitPagel.
+fitPagel takes the tree and two factor vectors as input, so we’ll need to extract these one
+by one from our bonyfish.data data frame first. Just as we’ve seen in prior chapters, a
+convenient way to do this is using the handy R function setNames.
+
+```{r}
+spawning_mode<-setNames(bonyfish.data[,1],
+rownames(bonyfish.data))
+paternal_care<-setNames(bonyfish.data[,2],
+rownames(bonyfish.data))
+
+parentalCare.fit<-fitPagel(bonyfish.tree,paternal_care,
+spawning_mode)
+print(parentalCare.fit)
+```
+
+In our opinion, however, a strong inference of correlated evolution would only be supported if the fitted parameters of the evolutionary process implied that certain character combinations (e.g., pair spawning fish with paternal care, in this example) should accumulate disproportionately over time when compared to other character combinations. To get a better sense of this, we can also graph our fitted models—just as we did with Mk models in chapter 6.
+
+
+```{r}
+plot(parentalCare.fit,signif=4,cex.main=1,
+cex.sub=0.8,cex.traits=0.7,cex.rates=0.7,
+lwd=1)
+```
+Neat.
+This fitted model (figure 7.2) indeed seems to suggest that the character combinations of pair spawning with paternal care and group spawning without paternal care should tend to accumulate over time under the process.
+We can see this because the rates linked to the arrows that point toward our character combinations male + pair and none + group are, on average, larger than the arrows pointing toward the other state combinations. That makes sense.
+
+#### What about unique evolutionary events?
+
+A few years ago, Maddison and FitzJohn (2015) identified some interesting but under appreciated properties of the Pagel (1994) method. Most significantly, they pointed out that unique or singular evolutionary events could lead to significant model fit of the dependent model compared to the independent model.
+To understand what we mean, let’s imagine the following data pattern (figure 7.3) for three
+different binary traits on the tree.
+
+```{r}
+## set seed to make the example reproducible
+set.seed(6)
+## simulate a 26 taxon tree with labels
+tree<-pbtree(n=26,tip.label=LETTERS)
+## generate three different data patterns on this
+## tree (as shown in the figure)
+x<-as.factor(setNames(c("a","a",c(rep("b",12),
+rep("a",12))),LETTERS))
+y<-as.factor(setNames(c("c","c",c(rep("d",12),
+rep("c",12))),LETTERS))
+z<-as.factor(setNames(c("e","e",rep(c("f","e"),6),
+rep("e",12)),LETTERS))
+## graph the tree and data using plotTree.datamatrix
+object<-plotTree.datamatrix(tree,data.frame(x,y,z),
+fsize=1,space=0.2,xexp=1.4,
+palettes=c("YlOrBr","Greens","Purples"))
+## add a point to the edge of the tree where
+## coincident changes in traits x & y may have
+## occurred
+pp<-get("last_plot.phylo",envir=.PlotPhyloEnv)
+points(mean(pp$xx[c(29,31)]),pp$yy[31],
+pch=21,cex=1.5,bg="lightblue")
+## add a legend
+add.simmap.legend(colors=setNames(unlist(object$colors), letters[1:6]),prompt=FALSE,x=1.05*object$end.x,
+y=Ntip(tree))
+```
+First, let’s test for nonindependent evolution between the character traits x and y.
+
+```{r}
+fit.xy<-fitPagel(tree,x,y)
+print(fit.xy,digits=4)
+```
+
+Next, let’s test for nonindependent evolution between the character traits x and z.
+```{r}
+fit.xz<-fitPagel(tree,x,z)
+print(fit.xz,digits=4)
+```
+Once again, our nonindependent model is highly significant.
+When we plot this fitted model, the result makes perfect sense.
+
+```{r}
+plot(fit.xz,signif=2,cex.main=1,
+cex.sub=0.8,cex.traits=0.7,cex.rates=0.7,
+lwd=1)
+```
+What we should see in figure 7.4 is a very high rate of transition for character z when trait
+x is in state b, but not when it’s in state a.
+
+So what’s the problem?
+The reason that Maddison and FitzJohn’s (2015) article has caused such consternation is
+because most investigators never thought that the method would find singular evolutionary
+events to be significant. In fact, we ought not to have been surprised.
+If we think about it objectively, the probability of the pattern shown for characters x and y or, likewise, for characters x and z is extremely low if the characters are independent.
+
+One way to understand this is to consider picking two different characters that were genuinely evolving independently—out of all possible characters for our set of taxa.
+The probability that these two randomly chosen characters, having each changed in state
+only once, happened to have changed along the same branch of the tree is equal to the length
+of that branch over the sum of all the branches of the tree! Normally (except for very small trees or very long branches), this is likely to be a relatively small number.
+The reason that this is problematic in practice, however, is that biologists almost never
+choose characters for analysis with Pagel’s (1994) method absent some fore knowledge about
+how their characters might be codistributed across the tips and clades of the tree.
+For instance, we might start with a field observation that forest birds tend to have red
+plumage. Beginning with this observation, we then proceed to test for an evolutionary association between habitat and plumage color!
+What to do, then? Well, rather than recommend that Pagel’s (1994) method not be used, we
+suggest that it be used with caution in combination with graphing the data (as in figures 7.1
+and 7.3) and the fitted models (as in figures 7.2 and 7.4).
+These two things combined together—statistical model fitting and graphing our data—will
+give us a much better picture than either alone of what’s going on in our evolutionary system
+of interest.
+
+### Modeling heterogeneity in the evolutionary rate for a discrete trait
+
+As we discussed, this approach is often used to investigate the evolutionary correlation between two discrete characters because, under some circumstances, state-dependent binary trait evolution can tend to result in a disproportionate accumulation of certain combinations
+of character states for the two traits compared to what we’d expect if the traits evolved independently (Maddison et al. 2007).
+On the other hand, if we merely hypothesize that the evolutionary rate11 varies from one part of the tree to another, it’s also possible for us to just fit this model directly!
+
+#### Multi-regime Mk model
+
+is a model in which we propose different regimes for our discrete character’s evolution and paint these regimes onto the phylogeny
+(Revell et al. 2021). As such, the model is philosophically very similar to the multi-rate Brownian motion and multi-optimum Ornstein–Uhlenbeck models
+
+```{r}
+## read tree from file
+anolis.tree<-read.simmap(file="data/anolis.mapped.nex",
+version=1.5,format="nexus")
+anolis.tree
+
+## read data from file
+dewlap.data<-read.csv("data/dewlap.colors.csv",
+row.names=1,stringsAsFactors=TRUE)
+head(dewlap.data)
+
+## load geiger package
+library(geiger)
+## run name.check
+chk<-name.check(anolis.tree,dewlap.data)
+summary(chk)
+
+anolis.pruned<-drop.tip.simmap(anolis.tree,
+chk$tree_not_data)
+dewlap.pruned<-dewlap.data[anolis.pruned$tip.label,]
+name.check(anolis.pruned,dewlap.pruned)
+```
+
+```{r}
+## set our colors for the discrete trait
+dewlap.colors<-setNames(levels(dewlap.pruned[,4]),
+levels(dewlap.pruned[,4]))
+## plot our tree with dewlap colors at the tips
+plotTree.datamatrix(anolis.pruned,
+X=dewlap.pruned[,4,drop=FALSE],
+colors=list(dewlap.colors),
+yexp=1,header=FALSE,xexp=1.2,offset=0.5)
+## set the colors for our regimes
+cols<-setNames(rainbow(n=6),
+c("CG","GB","TC","TG","Tr","Tw"))
+## graph our tree with mapped regimes on top of
+## the previous tree
+plot(anolis.pruned,colors=cols,ftype="off",
+outline=TRUE,add=TRUE,
+xlim=get("last_plot.phylo",envir=.PlotPhyloEnv)$x.lim,
+ylim=get("last_plot.phylo",envir=.PlotPhyloEnv)$y.lim)
+## add legends for both the tip states of dewlap
+## color and the mapped regimes
+leg<-legend(x="topright",legend=names(dewlap.colors),
+pch=22,pt.bg=dewlap.colors,pt.cex=1.5,
+title="Dewlap color",cex=0.7,bty="n")
+leg<-legend(x=leg$rect$left,y=leg$rect$top-leg$rect$h,
+legend=names(cols),pch=22,pt.bg=cols,pt.cex=1.5,
+title="Ecomorph",cex=0.7,bty="n")
+```
+To fit ourmodel, we now need to go ahead and first pull out the discrete character, dominant
+dewlap color, into a new vector, just as we’ve done in prior sections of this chapter and book.
+
+```{r}
+domcol<-setNames(dewlap.data$domcol,
+rownames(dewlap.data))
+```
+
+Finally, we’re ready to fit our multi-regime model.
+Since our tree is on the small side (only seventy-five taxa, after pruning), we’ll just fit the
+simplest multi-regime model imaginable: one in which we assume a single constant rate of
+transition among states (ER) for each of the regimes mapped onto the tree. This model should
+have a number of parameters equal to the number ofmapped regimes (six in our example) and
+has a special case, the standard ER model from chapter 6.
+
+```{r}
+## fit the model using fitmultiMk
+fit.multi<-fitmultiMk(anolis.pruned,domcol)
+## print the results
+print(fit.multi,digits=2)
+```
+
+We can see that the maximum likelihood (ML) estimated rates for each regime are
+different—but the important question is whether or not this model explains our data significantly
+better than a simpler model, such as a single-regime model.
+The only way to find out is by fitting thatmodel too and then comparing the two different
+results.
+
+
+```{r}
+library(lmtest)
+library(phytools) 
+
+fit.single<-fitMk(anolis.pruned,domcol,model="ER")
+print(fit.single,digits=2)
+```
+
+```{r}
+lrtest(fit.single,fit.multi)
+```
+The function gives us a warning message;15 however, this is not a problem.
+The result, though, clearly indicates that our multi-regime model is not supported by the
+data.
+Howcanwe reconcile thiswith the fact that the numerical values of themaximumlikelihood
+estimations (MLEs) for our different regimes were so different—by up to nearly a factor of
+9—from one another?
+To understand this, we’ll compute16 estimates of the standard errors of our rates by using
+the curvature matrix of our likelihood surface, called the Hessian matrix.
+
+```{r}
+## compute the Hessian matrix
+H<-numDeriv::hessian(fit.multi$lik,fit.multi$rates)
+## take its negative inverse
+v<-diag(solve(-H))
+## extra estimated standard errors
+se<-sqrt(v)
+se
+
+## remove the box that would otherwise be graphed
+## around our chart
+par(bty="n")
+## create a simple strip chart
+stripchart(fit.multi$rates~fit.multi$regimes,vertical=TRUE,
+bty="n",ylim=c(-0.5,2.5),pch=21,cex=1.2,bg="gray",
+ylab="Estimated rate, q",cex.lab=0.8,cex.axis=0.7)
+abline(h=0,lty="dotted")
+## add confidence intervals
+for(i in 1:length(se)){
+lines(x=rep(i,3),y=c(fit.multi$rates[i]-se[i],
+fit.multi$rates[i],fit.multi$rates[i]+se[i]))
+points(i,fit.multi$rates[i],pch=21,cex=1.2,bg="gray")
+lines(c(i-0.05,i+0.05),rep(fit.multi$rates[i]-se[i],2))
+lines(c(i-0.05,i+0.05),rep(fit.multi$rates[i]+se[i],2))
+}
+```
+Estimates and standard errors of the rate of dewlap evolution for each ecomorph category in the tree.
+Our standard errors for each parameter estimate are broad and overlapping, which helps
+explain why we were not able to reject a constant-rate model!
+
+#### Modeling rate variation using the hidden-rates model
+
+Just as for discrete characters, sometimes we lack a specific prior hypothesis about how the rate of character evolution varies across the branches and nodes of our phylogeny.
+To that end, Beaulieu et al. (2013) proposed amodel that they referred to as the hidden-rates
+model.
+The premise of this model is pretty straightforward.  Imagine, in the simplest case, a model with two observable states for the character: 0 and 1. Normally, we would model this trait’s evolution as a continuous-time Markov chain with at most two transition rates: a rate of change in the trait from 0→1 and a second rate of transition from 1→0.
+
+Now consider that instead of one rate of evolution for each state, sometimes when our trait is in state 1, it evolves rapidly (to state 0), and sometimes it evolves slowly or not at all. Evolution by this process can create considerably more heterogeneity in the distribution of our character trait across the tips in the phylogeny. Some clades will switch back and forth frequently between states, while other clades change little.
+
+
+To get a sense of this, let’s see what evolution looks like under a constant-rate Markov process,
+in which the trait changes back and forth between two states with constant probability.We
+can then compare this to evolution via a process in which some lineages evolve to a third, hidden
+state, fromwhich changes aremore difficult, that is, under this simple, hidden-rate process
+that we have just described.
+To do this, we’ll simulate using the function sim.history, just as we did in chapter 6.
+For reference, we can start by simulating a binary character without a hidden rate.
+
+```{r}
+## set seed to make the code reproducible
+set.seed(7)
+## create a transition matrix between states under
+## a simple, Mk model
+Q.mk<-matrix(c(-1,1,1,-1),2,2,dimnames=list(0:1,0:1))
+## simulate a character history under this constant
+## rate model
+mk.tree<-sim.history(tree<-pbtree(n=100,scale=2),Q.mk,
+anc="0")
+```
+
+
+Next, we can create a transition matrix between character states, Q, that contains three
+states—but then we’ll imagine the scenario of only two observed states by merging the
+conditions of our second and third simulated character values.
+
+
+```{r}
+## create a hidden-rate transition matrix -- this matrix
+## has two different values for character 1: 1 and 1*
+Q.hrm<-matrix(c(-1,1,0,1,-1.5,0.5,0,0.1,-0.1),3,3,
+byrow=TRUE,dimnames=list(c(0:1,"1*"),
+c(0:1,"1*")))
+Q.hrm
+```
+
+Now we’ll visualize our three different character histories. The first character history is the one that we simulated under a standard, Mk model of trait evolution.
+The second is one in which there are two different values for character state 1: 1 and 1*.
+Finally, we’ll use a phytools function called mergeMappedStates to combine the two
+hidden conditions (1 and 1*) for the second of our two traits.
+
+```{r}
+## simulate under the hidden rate model
+hrm.tree<-sim.history(tree,Q.hrm,anc="0",message=FALSE)
+## subdivide plot area
+par(mfrow=c(1,3))
+## set colors for graphing
+cols<-setNames(c("lightgray","black"),0:1)
+## plot simple Mk model
+plot(mk.tree,colors=cols,ftype="off",mar=c(1.1,2.1,3.1,0.1))
+legend("bottomleft",names(cols),pch=15,col=cols,pt.cex=2,
+bty="n")
+mtext("(a)",line=0,adj=0)
+## set colors for hidden rate model
+cols<-setNames(c("lightgray","black","slategray"),c(0:1,"1*"))
+## plot HRM, but with "hidden" state shown
+plot(hrm.tree,colors=cols,ftype="off",mar=c(1.1,2.1,3.1,0.1))
+legend("bottomleft",names(cols),pch=15,col=cols,pt.cex=2,
+bty="n")
+mtext("(b)",line=0,adj=0)
+## plot HRM but with two 1 states (1 and 1*) merged
+cols<-setNames(c("lightgray","black"),0:1)
+plot(tree<-mergeMappedStates(hrm.tree,c("1","1*"),"1"),color=cols,
+ftype="off",mar=c(1.1,2.1,3.1,0.1))
+legend("bottomleft",c("0","1/1*"),pch=15,col=cols,pt.cex=2,
+bty="n")
+mtext("(c)",line=0,adj=0)
+```
+Simulation under :
+(a) a constant-rate Mk model and 
+(b) a hidden-rates model, but in which the hidden state is shown (slate gray branches). 
+(c) The same as (b), but in which the hidden state is no longer shown.
+
+The key difference that you should see between panels (a) and (c) of figure 7.7 is that in
+panel (c), sometimes the character changes frequently between states—but elsewhere in the
+tree, a lineage evolves to character state 1 and then gets stuck there. Panel (b) shows us that this occurs whenever the hidden state, 1*, is reached, just as per our simulation design.
+
+##### Fitting the hidden-ratesmodel using fitHRM
+
+Remember, last chapter, we found that in the second best-supported model, it was possible
+to evolve toes in a toeless (and thus, presumably, limbless) lizard.
+Although this may be plausible in a lineage of skinks that lost their limbs very recently, in
+other major squamate groups (such as snakes), it would seem to be quite untenable.
+This hypothesis17 is a hidden-rates model.
+
+Mostly for computational reasons, we decided to fit our model to the loss (and possible
+re-evolution) of limbs rather than number of hindfoot toes. We’ll do so using the same data as
+in chapter 5 by assuming that any species without hindfoot toes is limbless, while any species
+with toes must be limbed.
+For this analysis, we’ll use the same squamate-data.csv and squamate.tre
+datafiles as we did in chapter 6 and then clean up our data.
+
+```{r}
+library(geiger)
+## read data from file
+sqData<-read.csv("data/squamate-data.csv",row.names=1)
+## read tree from file
+sqTree<-read.nexus("data/squamate.tre")
+## match tree and data
+chk<-name.check(sqTree,sqData)
+sqTree.pruned<-drop.tip(sqTree,chk$tree_not_data)
+sqData.pruned<-sqData[sqTree.pruned$tip.label,,drop=FALSE]
+## extra number of hindfoot toes
+toes<-setNames(sqData.pruned[,"rear.toes"],
+rownames(sqData.pruned))
+```
+
+```{r}
+## create vector of NAs
+limbs<-setNames(rep(NA,length(toes)),names(toes))
+## set all values of toes > 0 to "limbed"
+limbs[toes>0]<-"limbed"
+## do the converse for toes == 0
+limbs[toes==0]<-"limbless"
+## convert to factor
+limbs<-as.factor(limbs)
+```
+
+In total, we’ll fit four models and compare them.
+The first is a model in which we imagine that each state for our discrete character (limbed
+and limbless) has one hidden state and that no changes are permitted between the hidden states
+or from a hidden state to the other observed state, just as we described above.
+We specify this model using the options umbral=TRUE (which tells the function that
+changes are not allowed between hidden states) and ncat=2 (two rate categories per state).
+Let’s see:
+
+
+```{r}
+limb.HRM1<-fitHRM(sqTree.pruned,limbs,ncat=2,model="ARD",
+umbral=TRUE,pi="fitzjohn",niter=5,opt.method="nlminb")
+```
+
+```{r}
+print(limb.HRM1,digits=4)
+```
+
+The argument niter tells the function howmany optimization iterations to run. The argument
+opt.method tells R which optimization routine to use to try to find the maximumlikelihood
+solution. Depending on the size of the data set and difficulty of the problem, users may
+need to adjust these different function arguments to ensure convergence to the correct solution.
+As an alternative to this first hidden-state model inwhich both limbed and limbless have hidden
+states, perhaps we should consider the possibility that only the limbless state has a hidden
+rate. To fit this model, we leave everything the same but adjust ncat to be c(1,2): two rates
+for limbless but only one for limbed.21 Let’s try it.
+
+```{r}
+limb.HRM2<-fitHRM(sqTree.pruned,limbs,ncat=c(1,2),model="ARD",
+umbral=TRUE,pi="fitzjohn",niter=5,opt.method="nlminb")
+```
+
+```{r}
+print(limb.HRM2,digits=4)
+```
+Last, let’s fit the converse of this (One rate for limbless and two rates for limbed, which we do by setting ncat=c(2,1)) as well as the standard Mk ARD model.
+
+
+```{r}
+## fit a HRM with a hidden state for limbed but not limbless
+limb.HRM3<-fitHRM(sqTree.pruned,limbs,ncat=c(2,1),model="ARD",
+umbral=TRUE,pi="fitzjohn",niter=5,opt.method="nlminb")
+```
+
+```{r}
+print(limb.HRM3,digits=4)
+```
+
+```{r}
+## fit a standard ARD model using fitHRM
+limb.Mk<-fitHRM(sqTree.pruned,limbs,ncat=1,model="ARD",
+umbral=TRUE,pi="fitzjohn",niter=1,opt.method="nlminb")
+```
+
+```{r}
+print(limb.Mk,digits=4)
+```
+When we’re done, we can plot our four models to ensure that they correspond with the four
+different biological scenarios that we’d imagine:
+
+Fitted hidden-rate models for data for limbs versus limblessness in 119 species of squamate reptiles. (a)
+Hidden-rate model in which each of the two binary states had a single hidden rate. (b) Hidden-rate model
+with a hidden rate for limbless but not limbs. (c) The converse of (b). (d) Fitted Mk ARD model.
+
+```{r}
+## subdivide our plotting area
+par(mfrow=c(2,2))
+## plot each of our four different fitted models
+plot(limb.HRM1,spacer=0.5,mar=c(0.1,1.1,2.1,0.1))
+mtext("(a)",line=0,adj=0)
+plot(limb.HRM2,spacer=0.5,mar=c(0.1,1.1,2.1,0.1))
+mtext("(b)",line=0,adj=0)
+plot(limb.HRM3,spacer=0.5,mar=c(0.1,1.1,2.1,0.1))
+mtext("(c)",line=0,adj=0)
+plot(limb.Mk,spacer=0.5,mar=c(0.1,1.1,2.1,0.1))
+mtext("(d)",line=0,adj=0)
+```
+
+Our first model, the four-state hidden-rate model, has all the other models as a special
+case. As such, it should always have a higher likelihood than the other three
+models.
+Likewise, the Mk model is itself a special case of all of the three previous models and, as
+such, should always have the lowest likelihood of the four.
+Let’s go ahead and tabulate log-likelihoods and Akaike information criterion (AIC) values
+for each of the four models to verify that this is indeed the case.We’ll put these together into a single data frame as follows:
+
+
+```{r}
+data.frame(model=c("4-state HRM","limbless hidden",
+"limbed hidden","Mk model"),
+logL=sapply(list(limb.HRM1,limb.HRM2,
+limb.HRM3,limb.Mk),logLik),
+k=sapply(list(limb.HRM1,limb.HRM2,
+limb.HRM3,limb.Mk),function(x) length(x$rates)),
+AIC=sapply(list(limb.HRM1,limb.HRM2,
+limb.HRM3,limb.Mk),AIC))
+```
+
+Here we see that although the four-state model has the highest likelihood, just as we
+expected, the AIC values indicate that model that is best supported by the data25 is actually
+the simplest, Mk model.26
+
+##### Fitting the hidden-rates model using corHMM
+Although we’ve been using phytools version of the hidden-rates model of Beaulieu et al. (2013), the most important package for hidden-rate analyses is the library by Beaulieu et al. (2020) called corHMM.
+
+
+This part is very important: our trait has to be coded as 1, 2, and so on. Since our original data have values of either 2 or 3, for our analysis to work, we first need to calculate pollen.data[,1]-1. If our discrete
+character was coded as character or factor, we’d need to convert it to numerical format first
+
+```{r}
+library(corHMM)
+## read tree
+pollen.tree<-read.tree(file="data/pollen-tree.phy")
+print(pollen.tree,printlen=3)
+## read data
+pollen.data<-read.csv(file="data/pollen-data.csv",row.names=1)
+head(pollen.data)
+## check to verify tree and data match
+name.check(pollen.tree,pollen.data)
+pollen<-data.frame(Genus.species=rownames(pollen.data),
+pollen.number=pollen.data[,1]-1)
+head(pollen)
+
+```
+Now, we’ll go ahead and fit our model using the function corHMM.
+
+
+```{r}
+fit.pollen<-corHMM(pollen.tree,pollen,rate.cat=3,nstarts=10,
+root.p="maddfitz")
+```
+
+Someof the argumentswe chose to specifyhere includedrate.cat, whichis equivalent to
+ncat in fitHRM: the number of rate categories per state.We chose to use three rate categories
+because this is the number that Williams et al. (2014) found in their best-fitting hidden-rate
+model.30
+We also set nstarts, the number of optimizations, to 10 and root.p, the root
+prior, to "maddfitz". This is the same root prior probability distribution as is used by
+fitDiscrete in the geiger package that we used in chapter 6 and the same one we set for
+fitHRM via the argument pi="fitzjohn" (Maddison et al. 2007; FitzJohn et al. 2009).
+
+```{r}
+fit.pollen
+```
+
+
+One way to think about the fitted model is as a series of different transition process: one
+for each level of the hidden state (three, in our case) and another for the transitions among
+levels.
+These can be plotted using the corHMM function plotMKmodel as follows (figure 7.9).
+
+ 
+```{r}
+plotMKmodel(fit.pollen,display="square",text.scale=0.5,
+vertex.scale=0.6,arrow.scale=0.5)
+```
+ 
+ Alternatively, we can just pull out the transition (Q) matrix of our full model, including
+its hidden states, and plot it in the same way that we plotted our Mk models from chapter 6
+(figure 7.10).
+
+```{r}
+plot(as.Qmatrix(fit.pollen),show.zeros=FALSE,lwd=1,
+cex.traits=0.7)
+```
+
+Last, sometimes we want to do more than simply fit our model to data—we’d also like to
+map our hidden states onto the tree. One of the neat things about corHMM is that it lets us do just that. In this case, what we’re going to do is plot the marginal ancestral state reconstructions31 onto all of the edges and nodes of the phylogeny.
+
+```{r}
+## create a new matrix containing the tip and internal node
+## marginal likelihoods
+states<-rbind(fit.pollen$tip.states[pollen.tree$tip.label,],
+fit.pollen$states)
+rownames(states)<-1:max(pollen.tree$edge)
+## normalize each row to sum to 1.0
+states<-t(apply(states,1,function(x) x/sum(x)))
+## set the colors for plotting
+reds<-c("#ec9488","#eb5a46","#933b27")
+blues<-c("#8bbdd9","#0079bf","#094c72")
+COLS<-c(reds[1],blues[1],reds[2],blues[2],reds[3],blues[3])
+## plot the tree nstates times, using transparency colors
+for(i in 1:ncol(states)){
+tree<-pollen.tree
+edge.col<-rep(NA,nrow(tree$edge))
+for(j in 1:nrow(tree$edge)){
+edge.col[j]<-make.transparent(COLS[i],
+mean(states[tree$edge[j,],i]))
+tree<-paintBranches(tree,tree$edge[j,2], as.character(j))
+}
+cols<-setNames(edge.col,1:nrow(tree$edge))
+plot(tree,type="fan",colors=cols,ftype="off",
+lwd=1,add=(i!=1))
+}
+## add node labels using pies to show marginal probabilities
+## at each node
+par(fg="transparent")
+nodelabels(pie=fit.pollen$states,piecol=COLS,cex=0.2)
+par(fg="black")
+## finally, add a legend
+legend("topleft",rownames(fit.pollen$solution)[c(1,3,5,2,4,6)],
+pch=15,col=COLS[c(1,3,5,2,4,6)],pt.cex=2,bty="n")
+```
+
+
+The way we did this was by using paintBranches in the phytools package to map
+different states onto the tree based on the marginal reconstructions in our "corhmm" object.
+We set the transparency level of our colors in each tree based on the probabilities from
+the reconstruction and then graphed the trees on top of each other. Finally, we added the
+probabilities from the reconstructions at all the nodes.
+Try to work through the code and figure out each of these steps.
+
+### A polymorphic trait model
+
+To this point in both chapters 6 and in this chapter, we’ve always assumed that our discrete
+character has only one state per lineage. Sometimes, however, different individuals within a species have different values for the trait.
+When these two or more states are common, it makes sense to treat this phenotypic trait as
+polymorphic.
+In this section, we will see how to fit a polymorphic discrete state trait evolutionmodel. This model is new to this book, so we encourage readers to try it out and see what happens!
+The polymorphic trait evolution model we’ll use is pretty simple. It merely assumes that
+polymorphism is an intermediate condition between each pair of monomorphic states.
+That is to say, for a character with two monomorphic conditions, a and b, to transition from
+a to b, we imagine that any lineage should first pass through the intermediate state of a + b.
+
+#### Structure of a polymorphic trait model
+
+Everything works nicely for a binary trait; however, when our discrete character can assume
+more than two values, for instance, a, b, and c, things begin to get more complicated.
+First, we’re faced with the question of whether to treat evolution of our character as ordered
+or unordered.
+If evolution is ordered, then to change froma to c, a lineage must (minimally) evolve a→
+a+b→b→b+c→c or33 (and this is very important) a→a+b→a+b+c→b+c→c. Both
+of this, two possibilities must be part of our fitted model.
+If evolution is unordered, then a transition from a to c should be able to occur just as it did in our binary trait: a→a+c→c. 
+It often makes sense to treat meristic (counted) traits as ordered. Figure 7.12 shows the conceptual structure of ordered three-state (figure 7.12a) and four-state (figure 7.12b) models.
+
+
+```{r}
+## split the plot into two panels
+par(mfrow=c(1,2))
+## graph an ordered polymorphic trait model with
+## three monomorphic conditions
+graph.polyMk(k=3,model="ARD",ordered=TRUE,
+cex.traits=0.8,xlim=c(-1,1),ylim=c(-1,1))
+mtext("(a)",line=0,adj=0)
+## graph an ordered polymorphic trait model with
+## four monomorphic conditions
+graph.polyMk(k=4,model="ARD",ordered=TRUE,
+cex.traits=0.8,xlim=c(-1,1),ylim=c(-1,1),asp=1)
+mtext("(b)",line=0,adj=0)
+```
+Structure of ordered polymorphic character models as implemented in the phytools function fitpolyMk.
+(a) A three-state character. (b) A four-state character.
+
+
+```{r}
+## split our figure into four panels
+par(mfrow=c(2,2))
+## graph a representation of our polymorphic trait
+## evolution for two, three, four, and five
+## character states
+for(i in 1:4){
+graph.polyMk(k=i+1,model="ARD",states=letters[1:(i+1)],
+cex.traits=0.5,xlim=c(-1.2,1.2),ylim=c(-1,1),
+asp=NULL)
+mtext(paste("(",letters[i],")",sep=""),line=1,adj=0)
+}
+```
+
+Unordered polymorphic trait evolution models for (a) two, (b) three, (c) four, and (d) five levels of the discrete character.
+
+That is, we need to decide if we’re to assume that all types of transitions occur at the same rate (i.e., the ER model of chapter 6), that different transitions occur at different rates (the SYMmodel), that all types of transitions occur at different rates (the ARD model), or if evolution proceeds under some other scenario.
+
+##### The transient model
+
+Given the rapidly escalating scale of complexity for polymorphic discrete trait evolution models, it makes sense to think of biologically sensible ways to simplify our fitted model. We propose a model that we’re calling the transient model in which we imagine that polymorphism is an inherently less stable condition than monomorphism. Under this model, we suppose that the polymorphism is acquired at one (constant) rate and then lost at another (presumably faster) constant rate.
+This transient model makes sense even if many of our species are polymorphic because
+it helps explain why35 higher degrees of polymorphism (i.e., lineages with four, five, or more states for a polymorphic trait) tend to be rarer than species with one, two, or three conditions for a trait.
+
+
+We can see this by comparing the equilibrium distributions36 between an equal-rates (ER)
+polymorphic model with four states and a transient four-state model in which we assume that
+the rate of loss of polymorphism is four times higher than its rate of gain (figure 7.14).
+
+```{r}
+library(expm)
+## split our plotting area
+par(mfrow=c(1,2))
+## create a design Q matrix for polymorphic trait
+## evolution with four character states
+## but with equal transition rates between all
+## polymorphic conditions
+Q.ER<-graph.polyMk(k=4,model="ER",states=letters[1:4],
+plot=FALSE)
+diag(Q.ER)<--rowSums(Q.ER)
+## create a barplot showing the expected frequencies
+## under an equal-rates model
+barplot(rep(1/nrow(Q.ER),nrow(Q.ER))%*%expm(Q.ER*1000),
+las=2,ylim=c(0,0.2),cex.axis=0.8,cex.names=0.8)
+mtext("(a)",line=1,adj=0)
+## create a design Q matrix for the transient model
+Q.transient<-graph.polyMk(k=4,model="transient",
+states=letters[1:4],plot=FALSE)
+Q.transient[Q.transient==2]<-0.5
+diag(Q.transient)<--rowSums(Q.transient)
+## graph the equilibrium frequencies under the
+## transient model
+barplot(rep(1/nrow(Q.transient),nrow(Q.transient))%*%
+expm(Q.transient*1000),las=2,ylim=c(0,0.2),
+cex.axis=0.8,cex.names=0.8)
+mtext("(b)",line=1,adj=0)
+```
+Equilibrium distributions for a polymorphic trait evolution model under (a) equal rates of transitions between all states and state combinations and (b) the transient model, in which the rate of loss of polymorphism is assumed to be (in this case, four times) higher than its acquisition.
+
+What this analysis shows us is that under the transient model, lineages with higher and higher degrees of polymorphism are expected to be rarer and rarer—without imposing any particular “cap” on the number of states that are permitted or specifying different transition rates of increasing or decreasing polymorphism that depend on the number of states already
+possessed by a lineage.
+
+
+Now, let's fit the model!
+
+```{r}
+planaria.tree<-read.nexus(file="data/planaria.timetree.nex")
+print(planaria.tree,printlen=3)
+
+planaria.habitat<-read.csv(file="data/planaria.csv",
+row.names=1,stringsAsFactors=TRUE)
+planaria.habitat
+```
+We can see that the data consist of a two-state habitat character (Freshwater and
+Marine) with the polymorphic condition (Freshwater+Marine).
+
+```{r}
+## plot planaria tree
+plotTree(planaria.tree,ftype="i",fsize=0.8,offset=0.5)
+## extra habitat as a vector
+habitat<-setNames(planaria.habitat$Habitat,
+rownames(planaria.habitat))
+## split each element of the vector containing + character
+xx<-strsplit(as.character(habitat),split="+",fixed=TRUE)
+## convert to matrix
+pp<-matrix(0,length(habitat),2,dimnames=list(names(habitat),
+c("Freshwater","Marine")))
+for(i in 1:nrow(pp)) pp[i,xx[[i]]]<-1/length(xx[[i]])
+## graph pie tip labels
+tiplabels(pie=pp,piecol=c("white","black"),cex=0.6)
+## add legend
+legend("topleft",c("Freshwater","Marine"),pch=21,
+pt.bg=c("white","black"),pt.cex=2,bty="n")
+```
+
+```{r}
+## fit each of our for polymorphic trait evolution
+## models using fitpolyMk
+planaria.ER<-fitpolyMk(planaria.tree,habitat,
+model="ER",quiet=TRUE)
+planaria.SYM<-fitpolyMk(planaria.tree,habitat,
+model="SYM",quiet=TRUE)
+planaria.ARD<-fitpolyMk(planaria.tree,habitat,
+model="ARD",quiet=TRUE)
+planaria.transient<-fitpolyMk(planaria.tree,habitat,
+model="transient")
+```
+
+
+```{r}
+data.frame(model=c("ER","SYM","ARD","transient"),
+logLik=c(logLik(planaria.ER),logLik(planaria.SYM),
+logLik(planaria.ARD),logLik(planaria.transient)),
+k=c(attr(logLik(planaria.ER),"df"),
+attr(logLik(planaria.SYM),"df"),
+attr(logLik(planaria.ARD),"df"),
+attr(logLik(planaria.transient),"df")),
+AIC=aic<-c(AIC(planaria.ER),AIC(planaria.SYM),
+AIC(planaria.ARD),AIC(planaria.transient)),
+weight=unclass(aic.w(aic)))
+```
+
+This shows that the best-supported model, taking into account the number of estimated
+parameters, is indeed the transient model.
+Let’s print out this model and plot it (figure 7.16).
+
+```{r}
+planaria.transient
+```
+
+
+```{r}
+plot(planaria.transient,signif=2,mar=rep(1.1,4),
+cex.traits=0.6,cex.rates=0.4)
+```
+We see that in the best-fitting transient model, the rate away from polymorphism is
+more than three times higher than the rate of transition to polymorphism, which is kind of
+satisfying.
+
+### The thresholdmodel for studying discrete and continuous character traits
+
+This model is not based on a continuous-time Markov chain. called the threshold model, and it’s derived from evolutionary quantitative genetics and was first applied to the problem of analyzing interspecific data on a phylogeny by Felsenstein (2005,
+2012; also see Revell 2014a).
+
+According to the threshold model, the state of our discrete character is determined by the value of an unobserved continuous trait (normally called “liability”) along with one or more thresholds.Whenever liability crosses the threshold, our discrete character changes state (Felsenstein 2005, 2012; Revell 2014a).
+
+Figure 7.17 shows an example of evolution under the threshold model. In panel (a) of the figure,40 we see liability evolution through time by Brownian motion evolution. The thresholds between discrete states are represented by way of the vertical dashed lines. In panel (b), we see how liability evolution translates to changes in the threshold trait on the tree.
+
+```{r}
+library(RColorBrewer)
+## split plot and set margins
+par(mfrow=c(1,2),mar=c(4.1,4.1,2.1,1.1))
+## simulate and graph Brownian liability evolution
+## with discrete character changes under the
+## threshold model
+X<-bmPlot(tree<-pbtree(b=0.018,n=12,t=100,
+type="discrete",quiet=TRUE),
+type="threshold",thresholds=c(0,0.5,2),
+anc=1,sig2=1/100,ngen=max(nodeHeights(tree)),
+return.tree=TRUE,bty="n",
+colors=brewer.pal(4,"RdYlBu"))
+mtext("(a)",line=1,adj=0)
+## rotate the nodes of our simulated tree to
+## (as much as possible) match the rank order of
+## simulated liabilities
+
+tt<-minRotate(as.phylo(X$tree),X$x,
+print=FALSE)$tip.label
+## plot an outline for our phylogenetic tree
+plotTree(X$tree,lwd=4,ftype="off",
+tips=setNames(1:Ntip(X$tree),tt),
+direction="upwards",mar=c(4.1,1.1,2.1,4.1))
+## add the discrete character history
+plot(X$tree,lwd=2,ftype="off",colors=X$colors,
+tips=setNames(1:Ntip(X$tree),tt),
+direction="upwards",mar=c(4.1,1.1,2.1,4.1),
+add=TRUE)
+mtext("(b)",line=1,adj=0)
+```
+
+In particular, the rate of change between states is visibly heterogeneous across the tree.41
+This is because when a lineage is near a threshold, the discrete character changes frequently
+between states. By contrast, if a lineage is far fromany threshold, the charactermay not change
+at all.
+
+One of the most significant advantages of the threshold model, however, is that it also provides
+us with an extremely convenient framework within which to model correlated evolution
+between discrete characters—something thatwe learned in section 7.2 can be hard to define for
+discrete traits. In the threshold model, the correlation between traits is merely the evolutionary
+correlation of their liabilities!
+
+In R, the correlational threshold model has been implemented in the phytools function threshBayes, which uses Bayesian inference.
+Let’s try fitting the correlational threshold model to the same two binary characters that we analyzed using the Pagel (1994) method earlier in this chapter (Benun Sutton and Wilson 2019).
+
+#### Correlation between two binary characters
+
+```{r}
+## read tree from file
+bonyfish.tree<-read.tree(file="data/bonyfish.tre")
+## read data from file
+bonyfish.data<-read.csv(file="data/bonyfish.csv",row.names=1,
+stringsAsFactors=TRUE)
+```
+
+```{r}
+## plot the tree with adjacent data matrix
+object<-plotTree.datamatrix(bonyfish.tree,bonyfish.data,
+fsize=0.5,yexp=1,header=FALSE,xexp=1.45,
+palettes=c("YlOrRd","PuBuGn"))
+## add a legend for trait 1
+leg<-legend(x="topright",names(object$colors$spawning_mode),
+cex=0.7,pch=22,pt.bg=object$colors$spawning_mode,
+pt.cex=1.5,bty="n",title="spawning mode")
+## add a second legend for trait 2
+leg<-legend(x=leg$rect$left+4.7,y=leg$rect$top-leg$rect$h,
+names(object$colors$paternal_care),cex=0.7,
+pch=22,pt.bg=object$colors$paternal_care,pt.cex=1.5,
+bty="n",title="paternal care")
+```
+
+
+Since our parameter space for this model consists of a liability value for each terminal taxon in the tree for each trait, plus the correlation coefficient between them, (In other words, lots of dimensions!) we’ll run 4,000,000 generations—anticipating that our Metropolis–Hasting MCMC sampler might be a bit inefficient in sampling the posterior distribution (Even more generations of MCMC may sometimes be necessary in practice—particularly for larger trees!).
+
+threshBayes also tries to autotune the acceptance ratio to a value of 0.23.
+(With apologies to the Bayesian purists—we do this throughout the whole MCMC, not just during burn-in.)
+
+```{r}
+## set the number of generations for the MCMC
+ngen<-4e6
+## run the MCMC in threshBayes
+mcmc.bonyfish<-threshBayes(bonyfish.tree,bonyfish.data,
+type=c("disc","disc"),ngen=ngen,plot=FALSE,
+control=list(print.interval=ngen/10))
+```
+
+```{r}
+mcmc.bonyfish
+```
+
+Some of the arguments that we supply to threshBayes include:
+- type, in which we indicate the data type, continuous or discrete, for each character of our input data frame or matrix; 
+- ngen, where we specify the number of generations of MCMC to run; and 
+- control, which is a list of control parameters of the MCMC. 
+Here, we only set the print interval to the display buffer, but under other circumstances, we may want to use this argument to adjust the prior probability distributions of our model or the proposal distributions for the MCMC.
+Just plotting our result shows a multipanel figure with the likelihood profile (that is, the likelihood for each generation of the MCMC), the acceptance rate of the MCMC, and the profile plot of the correlation coefficient (r), as this is the parameter that we’re probabl ymost interested in (figure 7.18).
+
+```{r}
+plot(mcmc.bonyfish)
+```
+Profile plots from a Bayesian MCMC analysis of the threshold model for spawning mode and paternal care
+evolution in bony fishes. (a) The likelihood profile. (b) Acceptance rates from the MCMC averaged across
+variables in the model and on a bandwidth as indicated in the figure panel. (c) Profile of the correlation
+coefficient, r.
+
+Since we’re likely to be most interested in the correlation between (the liabilities of) our two discrete characters, why don’t we also plot the posterior density of r in our model. This can be done pretty easily too. We see the results in figure.
+
+```{r}
+## set margins
+par(mar=c(5.1,4.1,2.1,2.1))
+## plot posterior density
+plot(density(mcmc.bonyfish),cex.lab=0.8,
+cex.axis=0.7)
+```
+
+Likewise, it’s straightforward to compute a 95 percent high-probability density (HPD) interval around the correlation.
+
+We’ll do this by first extracting the post–burn-in sample of values of r (assuming a 20 percent
+burn-in), assigning the class attribute "mcmc" to our vector, and then using the function
+HPDinterval from the very handy R package coda.49
+If you haven’t used coda (Plummer et al. 2006) before, you should install it now.
+
+```{r}
+## load the coda package
+library(coda)
+## extract our post burn-in sample for r
+r.mcmc<-tail(mcmc.bonyfish$par$r,
+0.8*nrow(mcmc.bonyfish$par))
+## set the class to "mcmc"
+```
+
+```{r}
+class(r.mcmc)<-"mcmc"
+## compute HPD interval for the correlation
+HPDinterval(r.mcmc)
+```
+
+This tells us that our 95 percent HPDinterval for r, although broad, does not include zero—
+although just barely!
+What does it mean that the mean correlation coefficient from the posterior distribution is
+negative?
+
+To interpret the direction of the correlation coefficient, we need to know the ordination of
+our binary traits. By ordination, we mean which state for each binary trait is up and which is
+down. By default, threshBayes will ordinate our traits in alphabetical order.
+In our case, this would mean that the state "pair" (spawning) and "none" (paternal
+care) are both up, and thus a negative evolutionary correlation implies that higher values of
+liability for group spawning tend to coevolve with lower values of liability for paternal care.
+(Or, equivalently, that higher values of liability for pair spawning tend to evolve with higher
+values of liability toward male parental care!)
+We can double-check the ordination of each of our binary traits just by printing the fitted
+model object to the screen.
+
+```{r}
+print(mcmc.bonyfish)
+```
+
+Once again, this result shows us that lineages evolving pair spawning (in trait 1) tend to evolve male parental care (for trait 2). How does this finding concord with what we found using Pagel’s (1994) model in figure 7.2?
+
+
+#### Analyzing discrete and continuous traits using the threshold model
+
+Finally, an interesting aspect of the threshold model (identified by Felsenstein 2012) is that it
+also creates a natural framework withinwhich to evaluate the evolutionary correlation between
+discrete and continuous traits.
+
+In this case, the correlation coefficient is now defined as the correlation between liabilities
+for the discrete trait and the numerical values of the continuous character in our analysis.
+
+To see how this works, we’ll use an example of the evolution of viviparity (from oviparity)
+in the South American lizard family Liolaemidae.
+These data are from a study by Esquerre´et al. (2019) in which the authors investigated the
+role played by the uplift of the Andes mountains in the biogeography and reproductive biology
+of this group.
+To follow along, you’ll need to download the files Liolaemidae.MCC.nex and
+Liolaemidae.data.csv from the book website.
+
+```{r}
+## read tree
+Liolaemidae.tree<-read.nexus(file="data/Liolaemidae.MCC.nex")
+print(Liolaemidae.tree,printlen=2)
+## read data
+Liolaemidae.data<-read.csv(file="data/Liolaemidae.data.csv",
+row.names=1,stringsAsFactors=TRUE)
+head(Liolaemidae.data)
+```
+Let’s repeat the analysis we undertook with the data from bony fishes, above, but this time
+using viviparity and temperature.
+In this case, we’ll test the hypothesis51 that the evolution of squamate viviparity is affected
+by environmental temperature—in this case the mean temperature of the warmest month
+(Esquerre´et al. 2019).
+
+It’s generally thought that lower environmental temperatures should favor the evolution
+of viviparity—because viviparity improves the ability of the mother to ensure favorable egg
+incubation conditions via behavioral thermoregulation (Shine and Bull 1979; Blackburn 1982).
+This seems like a perfect hypothesis to examine using the threshold model!
+
+This time, we’ll only run our MCMC for 1,000,000 generations (figure 7.20)—but not
+becausewe should, but because this is a bigger tree anddata set, so to run it formore generations
+would simply take too long!
+
+```{r}
+## set number of generations
+ngen<-1e6
+## run MCMC
+mcmc.Liolaemidae<-threshBayes(Liolaemidae.tree,
+Liolaemidae.data[,c(1,3)],
+type=c("disc","cont"),ngen=ngen,plot=FALSE,
+control=list(print.interval=ngen/10))
+```
+
+```{r}
+mcmc.Liolaemidae
+```
+
+```{r}
+plot(mcmc.Liolaemidae)
+```
+
+Many of our arguments are similar to the prior example, except for type, which here is set
+to type=c("disc","cont") to indicate that the first of our two traits is discretely coded,
+while the second is continuous.
+Now let’s get an HPD interval for the correlation coefficient and plot our posterior
+distribution (figure 7.21).
+
+For fun, we’ll draw a line with whiskers just above the x-axis to show our 95 percent HPD
+for r.
+
+```{r}
+## pull out the post burn-in sample and
+## compute HPD
+r.mcmc<-tail(mcmc.Liolaemidae$par$r,
+0.8*nrow(mcmc.Liolaemidae$par))
+class(r.mcmc)<-"mcmc"
+hpd.r<-HPDinterval(r.mcmc)
+hpd.r
+```
+
+```{r}
+## plot posterior density
+par(mar=c(5.1,4.1,2.1,2.1))
+plot(density(mcmc.Liolaemidae),bty="n",
+cex.lab=0.9,cex.axis=0.7)
+## add whiskers to show HPD
+h<-0-par()$usr[3]
+lines(x=hpd.r,y=rep(-h/2,2))
+lines(x=rep(hpd.r[1],2),y=c(-0.3,-0.7)*h)
+lines(x=rep(hpd.r[2],2),y=c(-0.3,-0.7)*h)
+```
+
+Since we see that the ordination of our discrete state is oviparity→viviparity, and the correlation
+coefficient is negative, we know that viviparity is associated with lower environmental
+temperatures.
+This matches what we predicted a priori.

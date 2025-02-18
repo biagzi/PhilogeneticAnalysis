@@ -231,10 +231,10 @@ head(pruned_data_subset)
 
 
 
-### phylogenetic PCA
+### PCA
 
 let’s go ahead and do a very simple analysis called a “phylogenetic principal components analysis” or phylogenetic PCA (Revell 2009) using our traits data.
-A phylogenetic PCA is exactly the same as a regular PCA except that we’re going to take the nonindependence of species into account when we compute the covariances (or correlations) between different traits.
+A phylogenetic PCA is exactly the same as a regular PCA except that we’re going to take the non independence of species into account when we compute the covariances (or correlations) between different traits.
 
 The interpretation of the first phylogenetic principal component is thus that it is the axis of greatest, multivariate evolution of our traits. Subsequent axes are successive orthogonal dimensions of maximum evolution.
 

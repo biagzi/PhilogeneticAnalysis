@@ -1,0 +1,266 @@
+---
+title: "Book Summary"
+output: html_document
+---
+
+# What are the hypothesis and rationales behind each approach?
+
+------------------------------------------------------------------------
+
+## **Methods and Concepts** 
+
+-   [**PCA:**]{.underline} taking the non independence of species into account when we compute the covariances (or correlations) between different traits.
+
+    -   The interpretation of the first phylogenetic principal component is thus that it is the axis of greatest, multivariate evolution of our traits. Subsequent axes are successive orthogonal dimensions of maximum evolution. (Section 1.10)
+
+-   [**PIC (Philogenetically Independent Contrasts):**]{.underline}While species data per se are not independent (owing to shared history due to the phylogeny), the differences (or contrasts) between species are.
+
+    -   Assumes that the amount of variation between species accumulates as a linear function of the time separating them.
+
+    -   A key assumption of linear regression analysis is that the residual error in the model is independently and identically distributed. Felsenstein (1985) reminded us that phylogenetic data will tend to violate this assumption because closely related species are very often more phenotypically similar than distant ones. Felsenstein (1985) also gave us the PIC method to take this nonindependence into account by computing phylogenetically independent contrasts (our PICs) and then substituting them for our original data in the linear regression model. (Section 2.3)
+
+-   [**PGLS (Phylogenetic Generalized Least Squares):**]{.underline} more flexible about the specific correlation structure of the residual error in the model, and it also allows us to include discrete factors as independent variables
+
+    -   Long before the development of independent contrasts, there already existed an estimation method that allowed us to account for non-i.i.d. in the residual error of a regression model. This technique is called generalized least squares or GLS. In fact, it has subsequently been shown that contrasts regression is a special case of GLS, where the correlation structure of the residual error is one where the expected correlation between species is directly proportional to their fraction of common ancestry since the root (assumes a Brownian model). (Section 3.3)
+
+    -   **Pagel's λ**
+
+        -   A very simple relaxation of our model might be via the introduction of a single additional parameter, let’s say λ, as a multiplier of the off-diagonal elements of the matrix (Pagel 1999a). The neat thing about this model is that it has both OLS (when λ = 0) and standard PGLS (when λ = 1) as special cases. (Section 3.4)
+
+        -   Defined from 0 to 1.
+
+        -   A ML estimation of lambda, 1.01, means that under our model, close relatives have correlated residuals and even a bit more so than they would under our original model—and we still conclude that there is an evolutionary correlation between the two traits.
+
+    -   *phylogenetic generalized* ANOVA: including *one or more factors as independent variables (Section 3.5)*
+
+    -   *phylogenetic generalized ANCOVA: combination of continuous and discrete factors (Section 3.5)*
+
+-   [**Brownian Motion:**]{.underline} stochastic, directionless process.
+
+    -   The correlation between related taxa is exactly proportional to the fraction of shared history they have in common: in other words, the time from the root of the tree to their MRCA (most recent common ancestor), divided by the total tree length. (Section 4.3)
+
+    -   *The Brownian model has two different parameters that we’ll try to estimate.*
+
+        -   *The first of these is the “instantaneous variance” of the stochastic evolutionary process under Brownian motion, usually referred to as the evolutionary rate: σ2.*
+
+        -   *The second of these is the initial state of the process. This corresponds to the ancestral condition at the root node of our tree, and here we’ll denote this quantity as x0.*
+
+    -   **Maximum likelihood estimation**
+
+        -   *To estimate the two parameters of our model from a set of observations for species and our tree, we need a criterion for choosing values of σ2 and x0 that best fit our data. One strategy is to select the values that maximize the probability of obtaining the data that we’ve observed. This strategy is called estimation by maximum likelihood and was initially developed by Ronald Fisher near the start of the twentieth century (Fisher 1922; see historical review in Aldrich 1997). Maximum likelihood estimators have since been shown to possess many desirable statistical properties, such as consistency, efficiency, and asymptotic unbiasedness (Edwards 1992).*
+
+-   [**Phylogenetic signal:**]{.underline}the tendency for related species to resemble one another more than expected by chance (Revell et al. 2008).
+
+    -   Phylogenetic signal, however, is very closely related to Brownian motion because the most popular ways of measuring signal do so with reference to this model. That is, they ask whether species tend to resemble each other less or more than one would expect based on a Brownian model of evolutionary change through time. Here, we’ll examine two different methods for measuring phylogenetic signals. (Section 4.6)
+
+        -   **Blomberg et al.’s K statistic**
+
+            -   a normalized ratio comparing the variance among clades on the tree to the variance within clades.
+
+            -   If the variance among clades is high (compared to the variance within clades), then phylogenetic signal is said to be high. Conversely, if the variance within clades is high (compared to the variance among clades), then phylogenetic signal will be low.
+
+            -   This ratio is then normalized by dividing it by its expected value under a Brownian evolutionary process. As such, Blomberg et al.’s (2003) K has an expected value of 1.0 under evolution by Brownian motion.
+
+            -   A quite popular endeavor is to test whether the amount of phylogenetic signal in our data by whatever measure) exceeds the quantity of signal expected by random chance. One sensible way to do that is by simply randomizing the data across the tips of the tree a large number of times and then repeatedly recalculating phylogenetic signal by the same measure for each randomized data set. *The fraction of randomizations with equal or higher values of phylogenetic signal than our observed value is our P-value for a null hypothesis test of no signal.*
+
+        -   ***Pagel’s λ***
+
+            -   λ is a scaling coefficient for the off-diagonal elements in the expected correlations among species that we learned about in chapter 3 (Pagel 1999a). Thus, values of λ \< 1 correspond to less phylogenetic signal than expected under a Brownian motion model.
+
+            -   Unlike K, however, λ is not generally well defined outside of the range of (0,1).
+
+            -   As such, λ is more appropriate for detecting phylogenetic signal that is lower than expected under Brownian motion than the converse.
+
+    -   **We do not expect a one-to-one correspondence between K and λ.** To the contrary, we suggest that the two metrics actually measure different aspects of phylogenetic signal and thus we should probably expect them to be different, not the same (also see Boettiger et al. 2012 for additional commentary on λ estimation).
+
+-   **Early burst (EB) model** (Blomberg et al. 2003)
+
+    -   Under this model, the rate of evolution, σ2, starts with some initial value at the root of the tree and then declines monotonically through time according to an exponential decay function. (Section 4.7)
+
+-   **Ornstein–Uhlenbeck (OU) model** (Hansen (1997))
+
+    -   This model is a relatively simple extension of Brownian motion, with an additional parameter (α) that describes the tendency to return toward a particular central value (θ). Because this model involves evolutionary change toward a particular value, the Ornstein–Uhlenbeck model is most often interpreted as a model for adaptive evolution in which α corresponds to the strength of natural selection and θ to the position of the optimum.
+
+    -   OU consists of at least three parameters:
+
+        -   θ, the position of the central value toward which the process will tend to revert;
+
+        -   α, the strength of the force drawing the evolutionary process toward θ; and,
+
+        -   σ2, the instantaneous variance of stochastic evolution in the model (Hansen 1997).
+
+-   **Multi-rate Brownian evolution**
+
+    -   permitting the rate of evolution under the model (σ2) to differ in different clades or in different parts of the phylogeny (O’Meara et al. 2006; Revell et al. 2018).
+
+-   **Multi-optimum Ornstein–Uhlenbeck evolution**
+
+    -   Although in theory, we could imagine fitting a model in which θ, α, or σ2 differed in different parts of the phylogeny, most often we tend to be most interested in the θ parameter as this is used to approximate the position or positions of the optimum or various optima under an adaptive evolutionary process through time. (Section 5.2)
+
+-   **Multivariate Brownian evolution**
+
+    -   If Brownian motion is occurring in more than one dimension at the same time, then it can no longer be fully described by a single-rate parameter, σ2. Instead, we need to include a rate for each trait dimension, σ2(i)—and an evolutionary covariance between them, σ(i,j) (Hohenlohe and Arnold 2008; Revell andHarmon 2008). The evolutionary correlation between traits is just the ratio of the latter divided by the square root of the product of the former for each trait.
+
+    -   A multivariate Brownian model is such in which the evolutionary covariance (and thus correlation) between characters is allowed to be different in different parts of the phylogeny (Revell and Collar 2009). (Section 5.3)
+
+-   **Testing for temporal shifts in the rate of evolution**
+
+    -   Imagining the relatively simple scenario in which the rate of evolution shifts at one point, or at more than one point, between the root of the tree and the present day, we can:
+
+        -   draw out a hypothesis proposing how the rate of evolution shifted
+
+        -   treat the location(s) in which the rate shifts occurred as a free parameter or set of free parameters
+
+        -   simultaneously optimize the rate shift locations jointly with the rates of evolution (σ12, σ22, and so on) for our trait. (Section 5.4)
+
+-   **Reversible-jump Markov chain Monte Carlo or rjMCMC (Green 1995).**
+
+    -   rjMCMC is a Bayesian estimation procedure, so like regular Bayesian MCMC, rjMCMC samples values for the parameters of our evolutionary model in an attempt to approximate their joint posterior probability distribution.
+
+    -   rjMCMC is similar to regularMCMC, except that, in addition to merely sampling different parameter values for our evolutionary model from their posterior distribution, rjMCMC also jumps between alternative model paramterization.
+
+    -   Going back to our scenario of a shifting evolutionary rate among branches or clades of the tree, this means that rjMCMC could be used to sample models (and model parameters) in which there is one rate shift, two, and so on. At the end of our rjMCMC analysis, we should have a posterior sample of both evolutionary models and parameter values under the models. (Section 5.4)
+
+-   **Mk model (Lewis 2001)**
+
+    -   The Mk model is so denominated because it describes a continuous-time, discrete k-state Markov process. The Mk process is one in which changes can occur between states at any time, and the rate of change to other states depends only on the current state of the chain and not on any prior state or on how long the chain has been in its current state. (Section 6.2)
+
+        -   **The equal-rates (ER) model**
+
+            -   Fits a single transition rate between all pairs of states for our discrete trait (Harmon 2019).
+
+        -   **The symmetric transition model (SYM)**
+
+            -   This model assumes that the rate of transition from each character state i to each state j is equal to the rate of change from state j to state i but that each pair of character states can have a different rate.
+
+        -   **All-rates-different model**
+
+            -   Within the extended Mk framework, the most complicated model imaginable16 is one in which every type of transition is allowed to occur with a different rate. This is called the “all-rates different” model or ARD (Harmon 2019).
+
+        -   **Personalized model**
+
+            -   We can design or own transition matrix specifying some hypothesis about the transitions rate between discrete states. For example, for the case of gain/lost of digits:
+
+                -   *We might hypothesize that toes can be lost and not reacquired, or perhaps that toes can be lost and regained, but that only changes between adjacent states (e.g., from five to four, from two to three, and so on) can occur (Brandley et al. 2008).*
+
+-   **Pagel's 94**
+
+    -   A dependent model: Under this model, the rate of evolution for character one is allowed to depend on the state for character two and/or vice versa (Pagel 1994). (Section 7.2)
+
+        -   This model is usually compared to the "independent model": Under this model, sensibly, our two different binary characters evolve independently from one another on the tree. This is exactly equivalent to fitting two, separate Mk models (from chapter 6) to our two binary traits. Since the characters are being treated as if they evolve independently, the total likelihood of the fitted model is just the product of the likelihoods for each trait.
+
+    -   A few years ago, Maddison and FitzJohn (2015) identified some interesting but under appreciated properties of the Pagel (1994) method. Most significantly, they pointed out that unique or singular evolutionary events could lead to significant model fit of the dependent model compared to the independent model. (it is problematic when IT IS NOT a case of convergent evolution)
+
+        One way to understand this is to consider picking two different characters that were genuinely evolving independently—out of all possible characters for our set of taxa. The probability that these two randomly chosen characters, having each changed in state only once, happened to have changed along the same branch of the tree is equal to the length of that branch over the sum of all the branches of the tree! Normally (except for very small trees or very long branches), this is likely to be a relatively small number. The reason that this is problematic in practice, however, is that biologists almost never choose characters for analysis with Pagel’s (1994) method absent some fore knowledge about how their characters might be codistributed across the tips and clades of the tree. For instance, we might start with a field observation that forest birds tend to have red plumage. Beginning with this observation, we then proceed to test for an evolutionary association between habitat and plumage color! What to do, then? Well, rather than recommend that Pagel’s (1994) method not be used, we suggest that it be used with caution in combination with graphing the data (as in figures 7.1 and 7.3) and the fitted models (as in figures 7.2 and 7.4). These two things combined together—statistical model fitting and graphing our data—will give us a much better picture than either alone of what’s going on in our evolutionary system of interest.
+
+-   **Multi-regime Mk model** **(Revell et al. 2021)**
+
+    -   we propose different regimes for our discrete character’s evolution and paint these regimes onto the phylogeny. (Section 7.3)
+
+    -   As such, the model is philosophically very similar to the multi-rate Brownian motion and multi-optimum Ornstein–Uhlenbeck models
+
+-   **Hidden-rates model (Beaulieu et al. (2013)**
+
+    -   If we lack a specific prior hypothesis about how the rate of character evolution varies across the branches and nodes of our phylogeny.
+
+    -   The premise of this model is pretty straightforward. Imagine, in the simplest case, a model with two observable states for the character: 0 and 1. Normally, we would model this trait’s evolution as a continuous-time Markov chain with at most two transition rates: a rate of change in the trait from 0→1 and a second rate of transition from 1→0.
+
+        Now consider that instead of one rate of evolution for each state, sometimes when our trait is in state 1, it evolves rapidly (to state 0), and sometimes it evolves slowly or not at all. Evolution by this process can create considerably more heterogeneity in the distribution of our character trait across the tips in the phylogeny. Some clades will switch back and forth frequently between states, while other clades change little.
+
+    -   Example for where it is good:
+
+        -   *Remember, last chapter, we found that in the second best-supported model, it was possible to evolve toes in a toeless (and thus, presumably, limbless) lizard. Although this may be plausible in a lineage of skinks that lost their limbs very recently, in other major squamate groups (such as snakes), it would seem to be quite untenable. This hypothesis is a hidden-rates model.*
+
+-   **The transient model**
+
+    -   A *model in which we imagine that polymorphism is an inherently less stable condition than monomorphism. Under this model, we suppose that the polymorphism is acquired at one (constant) rate and then lost at another (presumably faster) constant rate.*
+
+-   **Threshold model (**Felsenstein (2005, 2012; also see Revell 2014a).**)**
+
+    -   According to the threshold model, the state of our discrete character is determined by the value of an unobserved continuous trait (normally called “liability”) along with one or more thresholds.Whenever liability crosses the threshold, our discrete character changes state (Felsenstein 2005, 2012; Revell 2014a).
+
+    -   The rate of change between states is heterogeneous across the tree. This is because when a lineage is near a threshold, the discrete character changes frequently between states. By contrast, if a lineage is far fromany threshold, the charactermay not change at all.
+
+    -   One of the most significant advantages of the threshold model, however, is that it also provides us with an extremely convenient framework within which to model correlated evolution between discrete characters—something that we learned in section 7.2 can be hard to define for discrete traits. In the threshold model, the correlation between traits is merely the evolutionary correlation of their liabilities!
+
+    -   Finally, an interesting aspect of the threshold model (identified by Felsenstein 2012) is that it also creates a natural framework withinwhich to evaluate the evolutionary correlation between discrete and continuous traits. In this case, the correlation coefficient is now defined as the correlation between liabilities for the discrete trait and the numerical values of the continuous character in our analysis.
+
+    -   
+
+------------------------------------------------------------------------
+
+## Types of questions
+
+-   **I want to test if a trait X can be used to predict another trait Y (because X coevolves with Y by natural selection reasons), independently on their shared history (contingency)**
+
+    -   solution: OLS on the PICs
+
+    -   A highly significant correlation measured in a simple OLS regression analysis can be a spurious relationship driven by the phylogeny. The variables x and y can seems to be correlated but not be evolutionarily correlated. That is to say, a simple OLS result would tells us that we can use x to predict y—but only because (by knowing its value for x) we know something about where that species occurs in the tree, and so we can predict something about y (not because the trait X necessarily coevolves with trait Y by natural selection reasons). On the other hand, the nonsignificant linear regression of the contrasts tells us that4 we find no evidence of an evolutionary tendency for x and y to coevolve. (Section 2.3)
+
+-   **I want to test HOW MUCH of evolutionary correlation (by natural selection reasons) a trait X had with another trait Y, as I controlz for shared history (contingency).**
+
+    -   solution PGLS with Pagel's λ
+
+    -   *pgls.Lambda\<-gls(log(Orbit_area)\~log(Skull_length), data=primate.data, correlation=corLambda)* (Section 3.4)
+
+-   **I want to test if a discrete trait A coevolved with another trait C, after controlling for also the coevolution of B (continuous) in C and also controlling for the species shared history (contingency).**
+
+    -   solution PGLS with ANCOVA
+
+    -   *primate.ancova\<-gls(log(Orbit_area)\~log(Skull_length)+Activity_pattern,data=primate.data, correlation=corBM)* (Section 3.5)
+
+-   **Does the phylogenetic signal in trait A differs from the quantity of signal expected by random chance (under a Brownian Motion)?**
+
+    -   If we can’t reject the null hypothesis (our phylogenetic signal is withing the distributions generated by random attributions). This means that our observed value of K for mutation accumulation rate (on a log-scale) is entirely consistent with what we’d expected to obtain by chance if species mutation accumulation rates were randomly arrayed on the phylogeny. (Section 4.6)
+
+    -   In other words, do species share some trait A (morphological, ecological, life-history, behavioral) just because it is an inherited characteristics (high phylogenetic signal)?
+
+    -   If the trait appears in taxa due to convergent evolution, the signal should be small.
+
+-   **Does species living in different habitats are subjected to different regimes of natural selection in the trait A?**
+
+    -   solution: try multi-peak OU model compared with other simpler models (model selection)
+
+    -   Our result makes a lot of sense because we hypothesize that lizards using different micro habitats should be subject to different regimes of natural selection and that this natural selection should likewise cause ecologically similar species in different parts of the phylogeny to have more similar phenotypes than expected under Brownian motion (Losos 2009).
+
+-   **I hypothesize that the way trait A and B interact may have changed through time, thus, natural selection action in the relationship AxB can have been varied for different lineages.**
+
+    -   solution: multivariate Brownian evolution
+
+    -   For example:
+
+        -   The hypothesis we want to test is whether feeding mode influences the evolutionary correlation between different aspects of the buccal (i.e.,mouth) morphology of centrarchid fishes. Our two continuous traits are gape width (the relative width of the mouth when gaped) and buccal length (the relative length of the mouth cavity).
+
+-   **What if we think the rate of evolution may have varied over time, but we lack an a priori hypothesis about how that variation is structured among the clades or branches of our phylogeny?**
+
+    -   we could use the data in our continuous trait to tell us something about how the rate or process of evolutionary change has varied throughout our phylogeny (Revell et al. 2012; Revell 2021).
+
+    -   solution: *Testing for temporal shifts in the rate of evolution*
+
+-   **What if we want to explore whether our continuous-trait data suggest that the rate or process of evolutionary change varies among edges or among clades in our tree? Also, without having to specify even how many different regimes we have hypothesized for our trait**
+
+    -   (e.g., Revell 2021).
+
+    -   solution: we’re going to use a very different approach called reversible-jump Markov chain Monte Carlo or rjMCMC (Green 1995).
+
+-   **Which model best creates the distribution of pattern of a discrete character we observe? (no other traits used for this)**
+
+    -   solution: feet Mk-models with different types of transition rates between the discrete states
+
+-   **Is the presence of a discrete trait A (mode of parental care) correlated with the presence of another discrete trait B (the behavioral trait of pair spawning) ?**
+
+    -   Pagel's 94 -\> but be careful! It works well only in convergent evolution, not on homologous traits due to inheritance of one unique origin event.
+
+    -   Also, can use the Threshold model!! probably better!
+
+-   **What if the presence of a discrete trait A (states a, b, c, d) correlates with the presence of another discrete trait B (states 1,2,3,4,5) but the evolutionary rate varies from one part of the tree to other?**
+
+    -   One can use Multi-regime Mk model (Revell et al. 2021) or Hidden-rates model (Beaulieu et al. (2013)
+
+-   **What about polymorphic traits (different individuals within a species have different values for the trait)?**
+
+    -   The transient model
+
+-   **Test the hypothesis that the evolution of a discrete trait (squamate viviparity) is affected by a continuous trait (environmental temperature).**
+
+    -   Threshold model

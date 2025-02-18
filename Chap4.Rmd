@@ -3,7 +3,7 @@ title: "Chap4"
 output: html_document
 ---
 
-## Chapter 4. Modeling continuous character evolution on a phylogeny 
+# Chapter 4. Modeling continuous character evolution on a phylogeny 
 ---
 ```{r}
 library(ape)
@@ -218,7 +218,270 @@ fitBM_ar
 phylogenetic signal: which we’d define as the tendency for related species to resemble one another more than expected by chance (Revell et al. 2008).
 Two different methods for measuring phylogenetic signal of quantitative characters: Blomberg et al.’s (2003) K and Pagel’s (1999a) ..
 
+#### Blomberg et al.’s (2003) K 
+is best summarized as a normalized ratio comparing the variance among clades on the tree to the variance within clades.
+If the variance among clades is high (compared to the variance within clades), then phylogenetic signal is said to be high. Conversely, if the variance within clades is high (compared to the variance among clades), then phylogenetic signal will be low.
+This ratio is then normalized by dividing it by its expected value under a Brownian evolutionary process.As such, Blomberg et al.’s (2003) K has an expected value of 1.0 under evolution by Brownian motion.
 
+```{r}
+phylosig(bacteria.tree, genome_size)
+```
+
+
+```{r}
+## test for significant phylogenetic signal using
+## Blomberg’s K
+K_gs<-phylosig(bacteria.tree,genome_size,
+test=TRUE,nsim=10000)
+K_gs
+
+## set plot margins and font size
+par(cex=0.8,mar=c(5.1,4.1,2.1,2.1))
+## plot null-distribution and observed value of K
+plot(K_gs,las=1,cex.axis=0.9)
+```
+This result, and our plot of figure 4.9, tells us that despite being considerably less than 1.0, our observed value of phylogenetic signal, K, is still larger than the value of K we’d expect to find if our data for genome size were random with respect to the phylogeny.
+Now let’s repeat exactly the same exercise, but this time using mutation accumulation rate.
+
+```{r}
+## test for phylogenetic signal in mutation accumulation
+## rate
+K_ar<-phylosig(bacteria.tree,ln_mutation,
+test=TRUE,nsim=10000)
+K_ar
+
+## plot the results
+par(cex=0.8,mar=c(5.1,4.1,2.1,2.1))
+plot(K_ar,las=1,cex.axis=0.9)
+```
+Our phylogenetic signal is again very low, and this time we can’t reject the null hypothesis.
+This means that our observed value of K for mutation accumulation rate (on a log-scale) is entirely consistent with what we’d expected to obtain by chance if species mutation accumulation rates were randomly arrayed on the phylogeny (figure 4.10).
+
+Another quite reasonable question is whether our measured values of phylogenetic signal— rather than being greater than expected by chance—are nonetheless less than expected under a sensible null model for evolution, such Brownian evolution.
+There’s no automated routine in R to run this analysis, so to test this null hypothesis, we’ll have to generate a null distribution of values forK under our null hypothesis: Brownian motion.
+
+```{r}
+## simulate 10000 datasets
+nullX<-fastBM(bacteria.tree,nsim=10000)
+## for each, carry out a test for phylogenetic signal
+## and accumulate these into a vector using sapply
+nullK<-apply(nullX,2,phylosig,tree=bacteria.tree)
+## calculate P-values
+Pval_gs<-mean(nullK<=K_gs$K)
+Pval_gs
+
+Pval_ar<-mean(nullK<=K_ar$K)
+Pval_ar
+
+## set up for side-by-side plots
+par(mfrow=c(1,2))
+## plot for Genome size
+## null distribution
+hist(c(nullK,K_gs$K),breaks=30,col="lightgray",
+border="lightgray",main="",xlab="K",las=1,
+cex.axis=0.7,cex.lab=0.9,ylim=c(0,4000))
+## actual value as an arrow
+arrows(x0=K_gs$K,y0=par()$usr[4],y1=0,length=0.12,
+col=make.transparent("blue",0.5),lwd=2)
+text(K_gs$K,0.96*par()$usr[4],
+paste("observed value of K (P = ",
+round(Pval_gs,4),")",sep=""),
+pos=4,cex=0.8)
+mtext("(a) - Plot for genome size",line=1,adj=0)
+## plot for mutation accumulation rate
+## null distribution
+hist(c(nullK,K_ar$K),breaks=30,col="lightgray",
+border="lightgray",main="",xlab="K",las=1,
+cex.axis=0.7,cex.lab=0.9,ylim=c(0,4000))
+## actual value as an arrow
+arrows(x0=K_ar$K,y0=par()$usr[4],y1=0,length=0.12,
+col=make.transparent("blue",0.5),lwd=2)
+text(K_ar$K,0.96*par()$usr[4],
+paste("observed value of K (P = ",
+round(Pval_ar,4),")",sep=""),
+pos=4,cex=0.8)
+mtext("(b) - Plot for mutation accumulation rate",line=1,adj=0)
+```
+
+#### Pagel’s λ
+
+λ is a scaling coefficient for the off-diagonal elements in the expected correlations among species that we learned about in chapter 3 (Pagel 1999a).
+Thus, values of λ < 1 correspond to less phylogenetic signal than expected under a Brownian motion model. Unlike K, however, λ is not generally well defined outside of the range of (0,1).
+As such, is more appropriate for detecting phylogenetic signal that is lower than expected under Brownian motion than the converse.
+
+
+```{r}
+## compute phylogenetic signal, lambda, for genome size
+## and mutation accumulation rate
+phylosig(bacteria.tree,genome_size,method="lambda")
+
+phylosig(bacteria.tree,ln_mutation,method="lambda")
+```
+
+We see immediately that both traits have lambda estimates that are close to 1; however, λ is
+higher for genome size than for mutation accumulation rate.
+In some ways, this is similar to our findings for K, in which we showed that genome size had phylogenetic signal similar to the expectation under Brownian motion, while mutation accumulation rate had less.
+
+It’s important to note, though, that we do not expect a one-to-one correspondence between K and λ. To the contrary, we suggest that the two metrics actually measure different aspects of phylogenetic signal and thus we should probably expect them to be different, not the same (also see Boettiger et al. 2012 for additional commentary on λ estimation).
+The λ method also allows for a hypothesis test of a null that λ = 0.
+
+```{r}
+## test for significant phylogenetic signal, lambda,
+## in each of our two traits
+lambda_gs<-phylosig(bacteria.tree,genome_size,
+method="lambda",test=TRUE)
+lambda_gs
+
+lambda_ar<-phylosig(bacteria.tree, ln_mutation,
+method="lambda",test=TRUE)
+lambda_ar
+```
+
+Likelihood surfaces for λ for each trait.
+
+```{r}
+## plot the likelihood surfaces
+## first set plotting parameters, including subdividing
+## our plot area into 1 column and two rows
+par(mfrow=c(2,1),mar=c(5.1,4.1,2.1,2.1),
+cex=0.8)
+## plot the likelihood surfaces of lambda for each of our
+## two traits
+plot(lambda_gs,las=1,cex.axis=0.9,bty="n",
+xlim=c(0,1.1))
+mtext("(a) - genome size",line=1,adj=0)
+plot(lambda_ar,las=1,cex.axis=0.9,bty="n",
+xlim=c(0,1.1))
+mtext("(b) - ln mutation rate",line=1,adj=0)
+```
+
+This tells us that we can reject a null hypothesis of λ = 0 for both phenotypic traits in our data set.
+
+### “Early burst” (a.k.a. EB) model of Blomberg et al. (2003) 
+
+Under this model, the rate of evolution, σ2, starts with some initial value at the root of the
+tree and then declines monotonically through time according to an exponential decay function.
+
+```{r}
+## set parameters of the EB process
+sig2.0<-1.0
+a<-0.04
+t<-100
+## compute sigmaˆ2 as a function of time under this
+## process
+sig2.t<-sig2.0*exp(-0.04*0:t)
+## graph sigmaˆ2 through time
+par(mar=c(5.1,4.1,2.1,2.1))
+plot(0:t,sig2.t,type="l",xlab="time",
+ylab=expression(sigma^2),bty="l",
+las=1,cex.axis=0.9)
+```
+In particular, a declining rate of evolution through timewill tend to result in large differences
+between clades and relatively small differences within them.
+Just as we did for Brownian evolution earlier in the chapter, we can also graph evolutionary
+change through time on a phylogeny under EB using simBMphylo as follows
+
+
+
+```{r}
+## visualize early-burst evolution using simBMphylo
+object<-simBMphylo(6,100,sig2=sig2.t[1:100],
+fsize=0.8,cex.axis=0.6,cex.lab=0.8,
+las=1)
+```
+
+The EBmodel is one inwhich differences between lineages tend to accumulate rapidly near the beginning of a diversification. As such, it has often been linked to the concept of adaptive radiation.
+
+### The Ornstein–Uhlenbeck (OU) model
+
+The final model we’ll consider for this chapter is the Ornstein–Uhlenbeck model of Hansen (1997).
+This model is a relatively simple extension of Brownian motion, with an additional parameter (α) that describes the tendency to return toward a particular central value (θ).
+
+Because this model involves evolutionary change toward a particular value, the Ornstein–Uhlenbeck model is most often interpreted as a model for adaptive evolution in which α corresponds to the strength of natural selection and θ to the position of the optimum.
+
+
+## Fitting and comparative alternative continuous character models
+
+```{r}
+## fit EB model to genome size
+fitEB_gs<-fitContinuous(bacteria.tree,genome_size,model="EB")
+fitEB_gs
+```
+
+Our printed model summary tells us that our ML estimated value of the decay parameter, a, is almost exactly zero.
+When a = 0.0, the EB model reduces to a constant rate Brownian motion. This is not an error! It merely indicates that when we impose an EB model on our data, the best-fitting EB model is Brownian evolution!
+
+```{r}
+## fit OU model to genome size
+fitOU_gs<-fitContinuous(bacteria.tree,genome_size,
+model="OU")
+fitOU_gs
+```
+
+In this case, our best-fitting OU model is not a Brownian model (which would correspond
+to α = 0.0); α is quite different from zero, in fact.
+In this case, the warningmessage we received is very important because it indicates not that
+the MLE of α is near 0 (which would be equivalent to a Brownian motion model) but that it
+is at the default upper bound for optimization. Let’s change these default bounds and see what
+result we obtain.
+
+```{r}
+## fit OU model to genome size
+fitOU_gs<-fitContinuous(bacteria.tree,genome_size,
+model="OU",bounds=list(alpha=c(0,10)))
+fitOU_gs
+```
+This time, there’s no warning message—and both our optimized value of α and our loglikelihood
+are higher, which makes sense.
+To compare either EB and Brownian or OU and Brownian, we could use a likelihood ratio
+test.26 However, to compare all threemodels simultaneously, our best option is probably to use
+an information criterion such as the AIC.27
+Let’s do just that.
+
+```{r}
+## accumulate AIC scores from our three models into
+## a vector
+aic_gs<-setNames(c(AIC(fitBM_gs),
+AIC(fitEB_gs),AIC(fitOU_gs)),
+c("BM","EB","OU"))
+aic_gs
+```
+
+Since our preferred model under this criterion should be the one with the lowest AIC, this
+result tells us that the best-supported model (among those tested) for genome size is Ornstein–
+Uhlenbeck.
+We can also compute Akaike weights28 using the phytools function aic.w.
+
+```{r}
+aic.w(aic_gs)
+```
+
+Here you can see that the overwhelming majority of weight falls on the OU model—but evidence in support of the different models is somewhat split, and there is also quite a bit of weight on Brownian motion.
+
+Let’s now repeat all of this analysis, but formutation accumulation rate. In this case, we tried
+it ahead of time and know the MLE of α for our OU model is going to fall well outside of our
+default bounds, so we set bounds=list(alpha=c(0,100)) to see if that helps.
+
+```{r}
+## fit EB model
+fitEB_ar<-fitContinuous(bacteria.tree,ln_mutation, model="EB")
+## fit OU model
+fitOU_ar<-fitContinuous(bacteria.tree,ln_mutation,
+model="OU",bounds=list(alpha=c(0,100)))
+## accumulate AIC scores in a vector
+aic_ar<-setNames(c(AIC(fitBM_ar),
+AIC(fitEB_ar),AIC(fitOU_ar)),
+c("BM","EB","OU"))
+## compute and print Akaike weights
+aic.w(aic_ar)
+fitOU_ar
+```
+
+This tells us that a stochastic process with a tendency to revert toward a central value is
+better at explaining our data for mutation accumulation rates than is a model of constant-rate
+Brownian motion, or a model of early burst evolution, in which large differences between clades
+arise early in diversification and then the rate of evolution slows through time. This is actually
+quite a common pattern across comparative data sets (Harmon et al. 2010).
 
 
 

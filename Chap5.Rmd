@@ -1,0 +1,575 @@
+---
+title: "Chap5"
+output: html_document
+---
+
+# Chapter 5. Multi-rate, multi-regime, and multivariate models for continuous traits 
+
+```{r}
+library(ape)
+library(ggtree)
+library(ggplot2)
+library(dplyr)
+library(readr)
+library(aplot)
+library(geiger)
+library(OUwie)
+#library(bayou) I cant' install it
+```
+
+## Multi-rate Brownian evolution
+a model of Brownian motion evolution in which the rate of evolutionary change
+(σ2) is allowed to differ between clades or between different, predefined regions of the tree
+
+
+```{r}
+## load packages
+library(phytools)
+## read trees from file
+phryn.tree<-read.tree("data/Phrynosomatidae.phy")
+liol.tree<-read.tree("data/Liolaemidae.phy")
+## subdivide plotting area
+par(mfrow=c(1,2))
+## plot the two trees, adding labels using mtext
+plotTree(phryn.tree,color="lightblue",
+fsize=0.5,ftype="i",
+mar=c(1.1,1.1,2.1,1.1))
+mtext(text="(a)",line=0,adj=0)
+plotTree(liol.tree,color="lightgreen",
+fsize=0.5,ftype="i",
+mar=c(1.1,1.1,2.1,1.1))
+mtext(text="(b)",line=0,adj=0)
+
+## read data file
+Iguania<-read.csv("data/Iguania.csv",row.names=1)
+head(Iguania)
+```
+
+```{r}
+## run name.check on phrynosomatid tree
+chk<-name.check(phryn.tree,Iguania)
+summary(chk)
+
+## subsample Iguania to include only phrynosomatids
+phryn.data<-Iguania[phryn.tree$tip.label,]
+## check to see it matches the tree
+name.check(phryn.tree,phryn.data)
+
+## run name check on liolaemid tree
+chk<-name.check(liol.tree,Iguania)
+summary(chk)
+
+## subsample Iguania to include only liolaemids
+liol.data<-Iguania[liol.tree$tip.label,]
+name.check(liol.tree,liol.data)
+```
+
+```{r}
+## extract body sizes (SVL) for phrynosomatids and liolaemids
+## into separate vectors
+phryn.size<-log(setNames(phryn.data$SVL,
+rownames(phryn.data)))
+liol.size<-log(setNames(liol.data$SVL,
+rownames(liol.data)))
+```
+
+```{r}
+## fit our censored multi-rate Brownian model using
+## phytools::ratebytree
+fit.size<-ratebytree(c(phryn.tree,liol.tree),list(phryn.size,liol.size))
+fit.size
+```
+
+This result tells us that we can reject a null hypothesis of equal rates of body size evolution
+between these two clades, in favor of an alternative hypothesis that the rates differ.
+Inspecting our parameter estimates for the two models, we see that estimated rate of body
+size evolution in Liolaemidae is over 50 percent higher than the rate of body size evolution in
+Phrynosomatidae.
+Although in this example we focused on comparing the rate of evolution (σ2) between phylogenies,
+a similar approach can be used to fit a model with different values of σ2 in different
+clades of a single tree or even on different branches of the tree.
+
+
+## Multi-optimum Ornstein–Uhlenbeck evolution
+
+Just as we can fit a Brownian model that permits different values of σ2 for different trees (as we
+saw in the previous example) or different parts of a single tree, it’s also possible to extend the
+Ornstein–Uhlenbeck (OU) model by allowing the parameters of that model to have different
+values in different clades or on different branches of our phylogeny.
+
+Remember, OU consists of at least three parameters: θ, the position of the central value
+toward which the process will tend to revert; α, the strength of the force drawing the evolutionary
+process toward θ; and, finally, σ2, the instantaneous variance of stochastic evolution in
+the model (Hansen 1997).
+Although in theory, we could imagine fitting a model in which θ, α, or σ2 differed in different
+parts of the phylogeny, most often we tend to be most interested in the θ parameter as
+this is used to approximate the position or positions of the optimum or various optima under
+an adaptive evolutionary process through time.
+
+
+```{r}
+## read morphological data from file
+anole.morphology<-read.csv("data/anole.data.csv",
+row.names=1)
+## read ecological states from file
+anole.ecomorph<-read.csv("data/ecomorph.csv",
+row.names=1,stringsAsFactors=TRUE)
+
+## read in the phylogeny with ecomorph mapped
+## using phytools::read.simmap
+ecomorph.tree<-read.simmap(file="data/anolis.mapped.nex",
+format="nexus",version=1.5)
+ecomorph.tree
+```
+The object printout seems pretty similar to what we’re used to from typical "phylo" with
+one difference:
+The tree includes a mapped, 6-state discrete character
+with states:
+CG, GB, TC, TG, Tr, Tw
+This tells us that we areworking with a special type of phylogenetic object in R: the phytools
+"simmap" object.7 A "simmap" object is a special type of phylogeny in which the two or
+more states of a discrete character have been mapped or painted onto the edges and nodes of
+the tree.
+
+```{r}
+## check to see if data and phylogeny match using
+## geiger::name.check
+chk<-name.check(ecomorph.tree,anole.morphology)
+summary(chk)
+```
+```{r}
+## trim our input data to match the tree using
+## negative indexing
+ecomorph.data<-anole.morphology[
+-which(rownames(anole.morphology)%in%
+chk$data_not_tree),]
+name.check(ecomorph.tree,ecomorph.data)
+```
+
+```{r}
+## run phylogenetic PCA and print the results
+pca<-phyl.pca(ecomorph.tree,ecomorph.data)
+print(pca)
+```
+
+PC3 loads positively on forelimb (FLL) and hindlimb (HLL) lengths and negatively on
+lamellae number (LAM). In Anolis lizards, lamellae are expanded scales on their digits that
+they use to enhance clinging on smooth surfaces (Glossip and Losos 1997; Losos 2009). Lots
+of previous work suggested that more arboreal lizards will tend to evolve shorter limbs and
+more toepad lamellae (Losos 2009), so this PC dimension is of special interest in looking at the
+evolutionary divergence of microhabitat specialists in anoles.
+
+To work in OUwie, we need to make a special data frame for our analysis that contains
+our species names, the OU regimes at the tips of the tree for each species, and our
+continuous trait. To pull out PC3 from our "phyl.pca" object, we’ll use the expression
+scores(pca)[,3].
+Let’s see how it works:
+
+```{r}
+## create our OUwie data frame
+ouwie.data<-data.frame(Genus_species=rownames(scores(pca)),
+Reg=anole.ecomorph[rownames(scores(pca)),],
+X=as.numeric(scores(pca)[,3]))
+head(ouwie.data,n=10)
+```
+
+We also need to either supply the regimes for the nodes of the tree or map our regimes
+directly onto the branches. For us, the latter is the easier of these two options—because the tree
+we read in from file already has these regimes encoded (figure 5.2)!
+Here we’ll plot our mapped regimes. Remember, this is our hypothesis for how we think the
+parameters of our OU model (and, in particular, θ) varies across the tree. Our plot is shown in
+figure 5.2.
+
+
+```{r}
+cols<-setNames(rainbow(n=6),
+levels(anole.ecomorph[,1]))
+plot(ecomorph.tree,cols,lwd=2,ftype="i",fsize=0.4,
+ylim=c(-4,82),outline=TRUE)
+add.simmap.legend(colors=cols,prompt=FALSE,x=0,y=-2,
+vertical=FALSE,fsize=0.9)
+```
+
+```{r}
+## fit standard, one-rate Brownian model
+fitBM<-OUwie(ecomorph.tree,ouwie.data,model="BM1",
+simmap.tree=TRUE)
+
+## fit multi-rate Brownian model
+fitBMS<-OUwie(ecomorph.tree,ouwie.data,model="BMS",
+simmap.tree=TRUE,root.station=FALSE)
+#we allow each of the mapped regimes to evolve with a different value of the Brownian rate parameter, σ2. In the OUwie, thismodel is called the "BMS" model, and the only additional argument we’ll add is root.station=FALSE.10
+
+## fit multi-regime OU model
+fitOUM<-OUwie(ecomorph.tree,ouwie.data,model="OUM",
+simmap.tree=TRUE,root.station=FALSE)
+
+```
+In theory, we can also use the OUwie package to fitmodels inwhich α, σ2, and θ vary across
+the clades and branches of a phylogeny. In practice, we would recommend doing so only with
+a great deal of caution because the number of parameters to estimate can quickly grow very
+large, making the most parameter-rich of these models very difficult to fit to data sets typical
+of interspecific comparative studies
+
+```{r}
+fitBM
+```
+
+```{r}
+fitBMS
+```
+```{r}
+fitOUM
+```
+
+
+```{r}
+## use brownie.lite to double-check OUwie results
+brownie.lite(ecomorph.tree,scores(pca)[,3])
+```
+Finally, let’s compare among the models. First, we’ll pull out Akaike information criterion
+(AIC) scores for eachof the threefittedmodels, and thenwe’lluse these scores to obtain Akaike
+weights—quantities that represent the weight of evidence that supports each model (Burnham
+and Anderson 2003).
+
+```{r}
+## extracting AIC scores
+aic<-setNames(c(fitBM$AIC,fitBMS$AIC,fitOUM$AIC),
+c("BM1","BMS","OUM"))
+aic
+
+## compute Akaike weights
+aic.w(aic)
+```
+Akaike(1973;Bozdogan,1987)has shown that choosing the model with the lowest expected information loss (i.e., th emodel that minimizes the expected Kullback Leibler discrepancy) is asymptotically equivalent to choosing a model that has the lowest AIC value.
+
+This tells us that (among the three different models we’ve fit to our data set), the multi-peak
+(that is, multi-θ) OU model is the one that’s best supported by our data.
+
+Our resultmakes a lot of sense becausewe hypothesize that lizards using differentmicrohabitats
+should be subject to different regimes of natural selection and that this natural selection
+should likewise cause ecologically similar species in different parts of the phylogeny to have
+more similar phenotypes than expected under Brownian motion (Losos 2009).
+
+
+```{r}
+## get the tip state for ecomorph for each species
+tips<-getStates(ecomorph.tree,"tips")
+## set these tip states to have the colors using the
+## color scheme of Figure 5.2
+tip.cols<-cols[tips]
+## plot tree with adjacent barplot using
+## phytools::plotTree.barplot
+plotTree.barplot(ecomorph.tree,scores(pca)[,3],
+args.plotTree=list(fsize=0.4),
+args.barplot=list(col=tip.cols,
+xlab=expression(paste("PC3 (",""%up%"","limbs, ",
+""%down%"","lamellae)",sep="")),
+cex.lab=0.8))
+## add an informative legend
+legend("topright",levels(anole.ecomorph[,1]),
+pch=22,pt.bg=cols,pt.cex=1.5,cex=0.9)
+```
+In fact, if we show our phenotypic trait adjacent to the tips of the tree using a barplot in
+which bars are colored using the same scheme as figure 5.2, this pattern of evolution toward
+similar values for PC3 by ecologically similar lineages in different parts of the tree—that is, the
+pattern of convergent evolution in anoles (Losos 2009)—is quite apparent (figure 5.3).
+
+
+## Multivariate Brownian evolution 
+
+Sometimes, however, it makes sense to fit a model for the evolution of multiple traits at
+once.12
+If Brownian motion is occurring in more than one dimension at the same time, then it can
+no longer be fully described by a single-rate parameter, σ2. Instead,we need to include a rate for
+each trait dimension, σ2(i)—and an evolutionary covariance between them, σ(i,j) (Hohenlohe
+and Arnold 2008; Revell andHarmon 2008). The evolutionary correlation between traits is just
+the ratio of the latter divided by the square root of the product of the former for each trait.
+
+This kind of model makes sense to fit to our data under circumstances in which we’ve
+hypothesized that the way that different phenotypic traits work together or interact, and thus
+the way natural selection acts on their relationship, may have changed through time or among
+lineages of our tree.
+
+
+```{r}
+## read in tree with encoded discrete state using
+## phytools::read.simmap
+fish.tree<-read.simmap(file="data/Centrarchidae.nex",format="nexus",
+version=1.5)
+print(fish.tree,printlen=2)
+
+## read in trait data using read.csv
+fish.data<-read.csv("data/Centrarchidae.csv",header=TRUE,
+row.names=1,stringsAsFactors=TRUE)
+head(fish.data)
+```
+Just as in the previous section, we’re using a tree with a mapped discrete character that
+encodes our different evolutionary regimes. In this case, the regimes that we’ve mapped onto
+the nodes and branches of the tree are simply the feeding mode (piscivorous vs. nonpiscivorous)
+for each terminal taxon. As we’ve noted previously, later in this volume we’ll see how this
+type of character history can be produced using a statistical method.
+
+```{r}
+## set colors to be used for plotting
+cols<-setNames(c("white",palette()[2]),c("non","pisc"))
+## plot "simmap" object
+plot(fish.tree,cols,lwd=3,ftype="i",outline=TRUE,
+fsize=0.6)
+## add a legend
+legend("topleft",c("non-piscivorous","piscivorous"),
+pch=22,pt.bg=cols,pt.cex=1.5,cex=0.7,bty="n")
+```
+
+The hypothesis we want to test is whether feeding mode influences the evolutionary correlation
+between different aspects of the buccal (i.e.,mouth) morphology of centrarchid fishes. 
+Our two continuous traits are gape width (the relative width of the mouth when gaped) and
+buccal length (the relative length of the mouth cavity).
+
+```{r}
+## convert numerical trait data to a matrix
+fish.buccal<-as.matrix(fish.data[,2:3])
+## fit multi-regime multivariate Brownian model
+fitMV<-evol.vcv(fish.tree,fish.buccal)
+fitMV
+```
+This shows us that the model with two among-trait covariance matrices (one for piscivorous
+fish species and a second for their nonpiscivorous relatives) fits significantly better than a model
+with only one evolutionary covariance matrix.
+
+For cases inwhichwe have only two continuous traits, it’s actually possible to fit two different
+intermediate models between the two extremes of identity and no similarity (Revell and Collar
+2009). We’ll do this using the phytools function evolvcv.lite:
+
+```{r}
+fitMV.all<-evolvcv.lite(fish.tree,fish.buccal)
+fitMV.all
+```
+
+We see from the results that evolvcv.lite has now fit two additional models compared
+to evol.vcv: one (Model 2) in which the two regimes have different evolutionary rates
+for each trait, but the same evolutionary correlation, and another (Model 3) in which the
+regimes evolve with the same rate for each trait, but with different evolutionary correlations
+between the traits, depending on the regime. It turns out that the no common structure model
+(which is the same as the one we fit using evol.vcv) is still the best supported of the four.
+Since correlations tend to be a bit easier to interpret than covariances,wemight also like to
+extract these values for our alternative evolutionary models.
+
+
+```{r}
+cov2cor(fitMV$R.single)
+cov2cor(fitMV$R.multiple[,,"non"])
+cov2cor(fitMV$R.multiple[,,"pisc"])
+```
+
+This shows us that in our best-fitting model, the evolutionary correlation between gape width and buccal length is much higher (over 0.8 compared to −0.05) in piscivorous than nonpiscivorous fish species.
+This result makes biological sense, because piscivory (which is accomplished via suction
+feeding in Centrarchidae, as in many percomorph fishes) requires close integration of the
+different aspects of the feeding apparatus.
+Even though this result seems clear-cut, we believe that it’s always wise to visualize our data.
+In this case, why don’t we project our tree into phenotype space for the two characters using
+the phytools function phylomorphospace (as we’ve done in prior chapters)—but this time
+while retaining our regime mapping on the tree (figure 5.5).
+
+
+```{r}
+## modify the margins of the plot area and adjust axis
+## and label font sizes
+par(cex.lab=0.7,cex.axis=0.6,mar=c(5.1,4.1,1.1,2.1))
+## plot the phylomorphospace without the mapped
+## regimes
+phylomorphospace(as.phylo(fish.tree),fish.buccal,
+ftype="off",lwd=4,xlab="gape width",
+ylab="buccal length",node.size=c(0,0),
+bty="n")
+## add the phylomorphospace projection with the
+## mapped regimes
+phylomorphospace(fish.tree,fish.buccal,
+ftype="off",colors=cols,lwd=2,
+node.by.map=TRUE,xlab="gape width",
+ylab="buccal length",node.size=c(0,1.3),
+add=TRUE)
+## add a legend
+legend("topleft",c("non-piscivorous","piscivorous"),
+pch=22,pt.bg=cols,pt.cex=1.5,cex=0.7)
+```
+
+The pattern that we see in this projection (figure 5.5) is also quite clear: piscivorous lineages
+(in red) evolve with a higher evolutionary correlation between relative gape width and buccal
+length than do nonpiscivorous taxa (in white), just as indicated by our best-fitting evolutionary
+model (Revell and Collar 2009).
+
+
+## Testing for temporal shifts in the rate of evolution
+
+Imagining the relatively simple scenario in which the rate of evolution shifts at one point, or at more than one point, between the root of the tree and the present day, we can:
+
+draw out a hypothesis proposing how the rate of evolution shifted
+
+treat the location(s) inwhich the rate shifts occurred as a free parameter or set of free parameters
+
+simultaneously optimize the rate shift locations jointly with the rates of evolution (σ12, σ22, and so on) for our trait.
+
+```{r}
+## read cordylid tree from file
+cordylid.tree<-read.tree(file="data/cordylid-tree.phy")
+print(cordylid.tree,printlen=4)
+
+## read cordylid data from file
+cordylid.data<-read.csv(file="data/cordylid-data.csv",
+row.names=1)
+head(cordylid.data)
+```
+
+```{r}
+cordylid.pc1<-setNames(cordylid.data$pPC1,rownames(cordylid.data))
+```
+
+We’ll fit three models: a model without rate shifts, a model with one rate shift and thus two different rates of evolution, and a model with two rate shifts.
+
+We need to keep in mind that Brownian motion has two parameters (σ2 and x0), and
+our rate shift model will have two additional parameters for each estimated shift: the location
+of the shift and the extra rate of evolution! For fun, we can also compare these three models to
+the EB model of chapter 4.
+
+
+```{r}
+## fit single-rate model (no rate shift)
+fit1<-rateshift(cordylid.tree,cordylid.pc1)
+```
+```{r}
+## fit two-rate model (one rate shift)
+fit2<-rateshift(cordylid.tree,cordylid.pc1,nrates=2)
+```
+
+
+```{r}
+## fit three-rate model (two rate shifts)
+fit3<-rateshift(cordylid.tree,cordylid.pc1,nrates=3)
+```
+```{r}
+## fit EB model using geiger::fitContinuous
+fitEB<-fitContinuous(cordylid.tree,cordylid.pc1,
+model="EB")
+## compile our results into a list, sorted by
+## the number of parameters estimated
+fits<-list(fit1,fitEB,fit2,fit3)
+## create a table summarizing model fits
+data.frame(model=c("BM","EB","two-rate","three-rate"),
+logL=sapply(fits,logLik),
+k=sapply(fits,function(x) attr(logLik(x),"df")),
+AIC=sapply(fits,AIC),
+weight=unclass(aic.w(sapply(fits,AIC))))
+```
+
+This shows that the best-supported model is the two-rate model; however, the weight of
+evidence is almost exactly equal between the two- and three-rate models.
+Let’s print out our three-rate model to see how it is parameterized.
+
+```{r}
+## compute the total height of our cordylid tree
+h<-max(nodeHeights(cordylid.tree))
+## split our plot window into eight panels
+par(mfrow=c(4,2))
+## panel a) single-rate model graphed on the tree
+plot(fit1,mar=c(1.1,4.1,2.1,0.1),ftype="i",fsize=0.5,col="gray")
+mtext("(a)",adj=0,line=0)
+## panel b) line graph of single-rate model
+par(mar=c(4.1,4.1,2.1,1.1))
+plot(NA,xlim=c(0,h),
+ylim=c(0,12),xlab="time",
+ylab=expression(sigma^2),bty="n")
+lines(c(0,h),
+rep(fit1$sig2,2),lwd=3,col="gray")
+mtext("(b)",adj=0,line=0)
+## panel c) compute EB model and graph it on the tree
+## calculate sigmaˆ2 through time under fitted model
+s2<-fitEB$opt$sigsq*exp(fitEB$opt$a*
+seq(h/200,h-h/200,length.out=100))
+s2.index<-round((s2-min(s2))/diff(range(s2))*
+100)+1
+## use make.era.map to paint fitted EB model onto tree
+tmp<-make.era.map(cordylid.tree,
+setNames(seq(0,h,length.out=101),
+s2.index))
+## set colors for graphing
+cols<-setNames(
+gray.colors(101,0.9,0),
+1:101)
+## plot tree
+plot(tmp,cols,mar=c(1.1,4.1,2.1,0.1),ftype="i",
+ylim=c(-0.1*Ntip(cordylid.tree),Ntip(cordylid.tree)),
+fsize=0.5)
+## add color bar legend
+add.color.bar(leg=0.5*h,cols=cols,prompt=FALSE,
+x=0,y=-0.05*Ntip(cordylid.tree),lims=round(range(s2),3),
+title=expression(sigma^2))
+mtext("(c)",adj=0,line=0)
+## panel d) line graph of EB model
+par(mar=c(4.1,4.1,2.1,1.1))
+plot(NA,xlim=c(0,h),
+ylim=c(0,12),xlab="time",
+ylab=expression(sigma^2),bty="n")
+lines(seq(0,h,length.out=100),
+s2,lwd=3,col="gray")
+mtext("(d)",adj=0,line=0)
+## panel e) two-rate model projected on the tree
+plot(fit2,mar=c(1.1,4.1,2.1,0.1),ftype="i",fsize=0.5,col=cols)
+mtext("(e)",adj=0,line=0)
+## panel f) line graph of two-rate model
+par(mar=c(4.1,4.1,2.1,1.1))
+plot(NA,xlim=c(0,h),
+ylim=c(0,12),xlab="time",
+ylab=expression(sigma^2),bty="n")
+lines(c(0,fit2$shift,h),
+c(fit2$sig2,fit2$sig2[2]),
+type="s",lwd=3,col="gray")
+mtext("(f)",adj=0,line=0)
+## panel g) three-rate model projected on the tree
+plot(fit3,mar=c(1.1,4.1,2.1,0.1),ftype="i",fsize=0.5,col=cols)
+mtext("(g)",adj=0,line=0)
+## panel h) line graph of three-rate model
+par(mar=c(4.1,4.1,2.1,1.1))
+plot(NA,xlim=c(0,h),
+ylim=c(0,12),xlab="time",
+ylab=expression(sigma^2),bty="n")
+lines(c(0,fit3$shift,h),
+c(fit3$sig2,fit3$sig2[3]),
+type="s",lwd=3,col="gray")
+mtext("(h)",adj=0,line=0)
+```
+
+
+
+## Reversible-jump Markov chain Monte Carlo or rjMCMC (Green 1995).
+
+```{r}
+## read mammal tree from file
+mammal.tree<-read.tree("data/mammalHR.phy")
+print(mammal.tree,printlen=4)
+## read mammal data
+mammal.data<-read.csv("data/mammalHR.csv",row.names=1)
+## extra log body mass as a new vector
+bodyMass<-setNames(log(mammal.data$bodyMass),
+rownames(mammal.data))
+```
+
+```{r}
+## turn of the box for our plot
+par(bty="n")
+## make our OU prior distribution
+#priorOU<-make.prior(mammal.tree,
+#dists=list(dalpha="dhalfcauchy",
+#dsig2="dhalfcauchy",
+#dk="cdpois",dtheta="dnorm"),
+#param=list(dalpha=list(scale=0.1),
+#dsig2=list(scale=0.1),
+#dk=list(lambda=10, kmax=50),
+#dsb=list(bmax=1, prob=1),
+#dtheta=list(mean=mean(bodyMass),
+#sd=1.5*sd(bodyMass))),
+#lot.prior=TRUE)
+```
+
+
+

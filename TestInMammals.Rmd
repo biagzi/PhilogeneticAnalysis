@@ -144,3 +144,20 @@ fitBM_gs<-fitContinuous(tree,Longevity)
 fitBM_gs
 ```
 
+```{r}
+phylosig(tree, Longevity)
+```
+
+What does this mean though?
+A quite popular endeavor is to test whether the amount of phylogenetic signal in our data (by whatever measure) exceeds the quantity of signal expected by random chance.
+One sensible way to do that is by simply randomizing the data across the tips of the tree a large number19 of times and then repeatedly recalculating phylogenetic signal by the same measure for each randomized data set.
+
+
+```{r}
+## test for significant phylogenetic signal using
+## Blomberg’s K
+K_gs<-phylosig(tree,Longevity,
+test=TRUE,nsim=10000)
+K_gs
+```
+
